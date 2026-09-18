@@ -10,6 +10,7 @@ export interface Empleado {
   ultAsignacionVacac: string | null;
   jefe: string | null;
   estadoEmpleado: string;
+  empresa?: string; 
 }
 
 export const empleadosMock: Empleado[] = [
@@ -25,6 +26,7 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: "2025-09-01",
     jefe: "E010",
     estadoEmpleado: "A",
+    empresa: "Didelco",
   },
   {
     empleadoId: "E002",
@@ -38,6 +40,7 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: "2026-03-15",
     jefe: "E010",
     estadoEmpleado: "A",
+    empresa: "Steel",
   },
   {
     empleadoId: "E003",
@@ -51,6 +54,7 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: "2026-01-10",
     jefe: "E010",
     estadoEmpleado: "A",
+    empresa: "EFL",
   },
   {
     empleadoId: "E004",
@@ -64,6 +68,7 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: "2025-07-01",
     jefe: "E010",
     estadoEmpleado: "A",
+    empresa: "Didelco",
   },
   {
     empleadoId: "E005",
@@ -77,8 +82,8 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: null,
     jefe: "E010",
     estadoEmpleado: "A",
+    empresa: "Steel",
   },
-  // cuentas (E001-E005) destinadas a los roles empleados en Firebase Authentication
   {
     empleadoId: "E006",
     nombres: "Cristiano Lionel",
@@ -91,7 +96,7 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: "2026-02-11",
     jefe: null,
     estadoEmpleado: "A",
-    // Cuenta destinada al rol AdminTI en Firebase Authentication
+    empresa: "Didelco",
   },
   {
     empleadoId: "E007",
@@ -105,7 +110,7 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: "2026-06-01",
     jefe: null,
     estadoEmpleado: "A",
-    // Cuenta destinada al rol Gerente en Firebase Authentication
+    empresa: "EFL",
   },
   {
     empleadoId: "E008",
@@ -119,7 +124,7 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: "2026-04-05",
     jefe: "E007",
     estadoEmpleado: "A",
-    // Cuenta destinada al rol AnalistaNomina en Firebase Authentication
+    empresa: "Didelco",
   },
   {
     empleadoId: "E009",
@@ -133,7 +138,7 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: "2026-09-18",
     jefe: "E008",
     estadoEmpleado: "A",
-    // Cuenta destinada al rol AsistentePlanilla en Firebase Authentication
+    empresa: "Steel",
   },
   {
     empleadoId: "E010",
@@ -147,6 +152,6 @@ export const empleadosMock: Empleado[] = [
     ultAsignacionVacac: "2026-05-22",
     jefe: "E007",
     estadoEmpleado: "A",
-    // Cuenta destinada al rol JefeInmediato en Firebase Authentication
+    empresa: "Didelco",
   },
 ];
