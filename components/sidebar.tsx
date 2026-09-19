@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { LayoutDashboard, TrendingUp, FileText, ClipboardList, LogOut } from "lucide-react";
+import { LayoutDashboard, TrendingUp, FileText, ClipboardList, Shield, LogOut } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Reportes", href: "/reportes", icon: TrendingUp },
   { name: "Constancias", href: "/constancias", icon: FileText },
   { name: "Solicitudes", href: "/solicitudes", icon: ClipboardList, badge: "12" },
+  // Aquí metimos el panel de IT al suave en la lista
+  { name: "Panel de IT", href: "/admin/it", icon: Shield },
 ];
 
 export default function Sidebar() {
@@ -59,7 +61,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* 3. Perfil de Usuario Abajo (subido) */}
+      {/* 3. Perfil de Usuario Abajo */}
       <div className="mt-auto p-4 m-4 mb-6 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3 overflow-hidden">
           <div className="w-9 h-9 min-w-[36px] rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
