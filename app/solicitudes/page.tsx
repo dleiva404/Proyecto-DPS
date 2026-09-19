@@ -1,24 +1,36 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, X, Eye, CalendarDays } from "lucide-react";
-import { solicitudesMock } from "../../mocks/solicitudes";
-import { empleadosMock } from "../../mocks/empleados";
+import { Check, X, Eye, Pencil, Trash2, CalendarDays, Plus } from "lucide-react";
+import { solicitudesMock } from "@/mocks/solicitudes";
+import { empleadosMock } from "@/mocks/empleados";
+import type { Solicitud } from "@/types/solicitud";
 
 export default function SolicitudesPage() {
+    const [solicitudes, setSolicitudes] = useState<Solicitud[]>(solicitudesMock);
     const [categoria, setCategoria] = useState("Todos");
     const [empresa, setEmpresa] = useState("Todas");
     const [departamento, setDepartamento] = useState("Todos");
     const [fecha, setFecha] = useState("");
+    const [modal, setModal] = useState(false);
+    const [editando, setEditando] = useState<Solicitud | null>(null);
+
+    const [form, setForm] = useState({
+        empleadoId: "E001",
+        tipo: "Permiso Personal",
+        fechaHorario: "",
+        empresa: "Didelco",
+        estado: "Pendiente",
+    });
 
     const empleados = useMemo(
         () => Object.fromEntries(empleadosMock.map((e) => [e.empleadoId, e])),
         []
     );
 
-    const solicitudes = useMemo(
+    const solicitudesFiltradas = useMemo(
         () =>
-            solicitudesMock.filter((s) => {
+            solicitudes.filter((s) => {
                 const e = empleados[s.empleadoId];
                 if (!e) return false;
 
@@ -32,30 +44,32 @@ export default function SolicitudesPage() {
                 const deptoOK =
                     departamento === "Todos" || e.departamentoId === departamento;
 
-                return tipoOK && empresaOK && deptoOK && !fecha;
+                const fechaOK = !fecha || s.fechaHorario.includes(fecha);
+
+                return tipoOK && empresaOK && deptoOK && fechaOK;
             }),
-        [categoria, empresa, departamento, fecha, empleados]
+        [solicitudes, categoria, empresa, departamento, fecha, empleados]
     );
 
     const categorias = [
         {
             nombre: "Todos",
-            cantidad: solicitudesMock.length,
+            cantidad: solicitudes.length,
             badge: "bg-blue-500 text-white",
         },
         {
             nombre: "Permisos",
-            cantidad: solicitudesMock.filter((s) => s.tipo.includes("Permiso")).length,
+            cantidad: solicitudes.filter((s) => s.tipo.includes("Permiso")).length,
             badge: "bg-orange-100 text-orange-500",
         },
         {
             nombre: "Vacaciones",
-            cantidad: solicitudesMock.filter((s) => s.tipo === "Vacaciones").length,
+            cantidad: solicitudes.filter((s) => s.tipo === "Vacaciones").length,
             badge: "bg-red-100 text-red-500",
         },
         {
             nombre: "Constancias",
-            cantidad: solicitudesMock.filter((s) => s.tipo.includes("Constancia")).length,
+            cantidad: solicitudes.filter((s) => s.tipo.includes("Constancia")).length,
             badge: "bg-green-100 text-green-500",
         },
     ];
@@ -67,8 +81,77 @@ export default function SolicitudesPage() {
             : "Empleado desconocido";
     };
 
+    const abrirNuevo = () => {
+        setEditando(null);
+        setForm({
+            empleadoId: "E001",
+            tipo: "Permiso Personal",
+            fechaHorario: "",
+            empresa: "Didelco",
+            estado: "Pendiente",
+        });
+        setModal(true);
+    };
+
+    const abrirEditar = (solicitud: Solicitud) => {
+        setEditando(solicitud);
+        setForm({
+            empleadoId: solicitud.empleadoId,
+            tipo: solicitud.tipo,
+            fechaHorario: solicitud.fechaHorario,
+            empresa: solicitud.empresa,
+            estado: solicitud.estado,
+        });
+        setModal(true);
+    };
+
+    const guardarSolicitud = () => {
+        if (!form.fechaHorario.trim()) {
+            alert("Ingresa la fecha de la solicitud.");
+            return;
+        }
+
+        if (editando) {
+            setSolicitudes((actuales) =>
+                actuales.map((s) =>
+                    s.id === editando.id ? { ...s, ...form } : s
+                )
+            );
+        } else {
+            const nueva: Solicitud = {
+                id: Date.now().toString(),
+                ...form,
+            };
+
+            setSolicitudes((actuales) => [...actuales, nueva]);
+        }
+
+        setModal(false);
+        setEditando(null);
+    };
+
+    const eliminar = (id: string) => {
+        if (!confirm("¿Seguro que deseas eliminar esta solicitud?")) return;
+        setSolicitudes((actuales) => actuales.filter((s) => s.id !== id));
+    };
+
+    const cambiarEstado = (solicitud: Solicitud, estado: string) => {
+        setSolicitudes((actuales) =>
+            actuales.map((s) =>
+                s.id === solicitud.id ? { ...s, estado } : s
+            )
+        );
+    };
+
+    const verSolicitud = (s: Solicitud) => {
+        alert(
+            `Solicitud\n\nEmpleado: ${nombreEmpleado(s.empleadoId)}\nTipo: ${s.tipo}\nFecha: ${s.fechaHorario}\nEmpresa: ${s.empresa}\nEstado: ${s.estado}`
+        );
+    };
+
     return (
         <div className="p-6">
+            {/* Encabezado */}
             <div className="flex justify-between items-center mb-6">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">
@@ -79,11 +162,16 @@ export default function SolicitudesPage() {
                     </p>
                 </div>
 
-                <button className="px-6 py-3 rounded-xl bg-blue-200 hover:bg-blue-300 text-sm font-semibold text-slate-900">
+                <button
+                    onClick={abrirNuevo}
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-200 hover:bg-blue-300 text-sm font-semibold text-slate-900"
+                >
+                    <Plus className="w-4 h-4" />
                     Nueva Solicitud
                 </button>
             </div>
 
+            {/* Categorías */}
             <div className="grid grid-cols-4 gap-5 mb-6">
                 {categorias.map((item) => {
                     const activa = categoria === item.nombre;
@@ -93,8 +181,8 @@ export default function SolicitudesPage() {
                             key={item.nombre}
                             onClick={() => setCategoria(item.nombre)}
                             className={`h-12 px-6 rounded-xl border flex items-center justify-between text-sm font-semibold ${activa
-                                ? "bg-blue-200 border-blue-200 text-slate-900"
-                                : "bg-white border-slate-300 text-slate-900 hover:bg-slate-50"
+                                    ? "bg-blue-200 border-blue-200 text-slate-900"
+                                    : "bg-white border-slate-300 text-slate-900 hover:bg-slate-50"
                                 }`}
                         >
                             <span>{item.nombre}</span>
@@ -108,6 +196,7 @@ export default function SolicitudesPage() {
                 })}
             </div>
 
+            {/* Filtros */}
             <div className="flex gap-3 mb-6">
                 <select
                     value={empresa}
@@ -144,6 +233,7 @@ export default function SolicitudesPage() {
                 </div>
             </div>
 
+            {/* Tabla */}
             <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -169,75 +259,7 @@ export default function SolicitudesPage() {
                         </thead>
 
                         <tbody>
-                            {solicitudes.map((s) => {
-                                const e = empleados[s.empleadoId];
-
-                                return (
-                                    <tr
-                                        key={s.id}
-                                        className="border-b border-slate-200 last:border-0 hover:bg-slate-50"
-                                    >
-                                        <td className="px-6 py-5">
-                                            <p className="text-sm font-semibold text-slate-900">
-                                                {nombreEmpleado(s.empleadoId)}
-                                            </p>
-                                            <p className="text-xs text-slate-500 mt-1">
-                                                Depto {e?.departamentoId}
-                                            </p>
-                                        </td>
-
-                                        <td className="px-6 py-5 text-sm font-semibold text-slate-900">
-                                            {s.tipo}
-                                        </td>
-
-                                        <td className="px-6 py-5 text-sm text-slate-600">
-                                            {s.fechaHorario.split(" ").slice(0, 2).join(" ")}
-                                        </td>
-
-                                        <td className="px-6 py-5 text-sm font-bold text-slate-900">
-                                            {s.empresa}
-                                        </td>
-
-                                        <td
-                                            className={`px-6 py-5 text-sm font-semibold ${s.estado === "Pendiente"
-                                                ? "text-orange-500"
-                                                : s.estado === "Aprobada"
-                                                    ? "text-green-600"
-                                                    : "text-red-600"
-                                                }`}
-                                        >
-                                            {s.estado}
-                                        </td>
-
-                                        <td className="px-6 py-5">
-                                            <div className="flex justify-center items-center gap-3">
-                                                <button
-                                                    title="Aprobar"
-                                                    className="w-6 h-6 border border-green-500 text-green-500 rounded-md flex items-center justify-center hover:bg-green-50"
-                                                >
-                                                    <Check className="w-4 h-4" />
-                                                </button>
-
-                                                <button
-                                                    title="Rechazar"
-                                                    className="w-6 h-6 border border-red-500 text-red-500 rounded-md flex items-center justify-center hover:bg-red-50"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-
-                                                <button
-                                                    title="Ver solicitud"
-                                                    className="text-orange-500 hover:text-orange-600"
-                                                >
-                                                    <Eye className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-
-                            {solicitudes.length === 0 && (
+                            {solicitudesFiltradas.length === 0 ? (
                                 <tr>
                                     <td
                                         colSpan={6}
@@ -246,6 +268,93 @@ export default function SolicitudesPage() {
                                         No se encontraron solicitudes.
                                     </td>
                                 </tr>
+                            ) : (
+                                solicitudesFiltradas.map((s) => {
+                                    const e = empleados[s.empleadoId];
+
+                                    return (
+                                        <tr
+                                            key={s.id}
+                                            className="border-b border-slate-200 last:border-0 hover:bg-slate-50"
+                                        >
+                                            <td className="px-6 py-5">
+                                                <p className="text-sm font-semibold text-slate-900">
+                                                    {nombreEmpleado(s.empleadoId)}
+                                                </p>
+                                                <p className="text-xs text-slate-500 mt-1">
+                                                    Depto {e?.departamentoId}
+                                                </p>
+                                            </td>
+
+                                            <td className="px-6 py-5 text-sm font-semibold text-slate-900">
+                                                {s.tipo}
+                                            </td>
+
+                                            <td className="px-6 py-5 text-sm text-slate-600">
+                                                {s.fechaHorario}
+                                            </td>
+
+                                            <td className="px-6 py-5 text-sm font-bold text-slate-900">
+                                                {s.empresa}
+                                            </td>
+
+                                            <td
+                                                className={`px-6 py-5 text-sm font-semibold ${s.estado === "Pendiente"
+                                                        ? "text-orange-500"
+                                                        : s.estado === "Aprobada"
+                                                            ? "text-green-600"
+                                                            : "text-red-600"
+                                                    }`}
+                                            >
+                                                {s.estado}
+                                            </td>
+
+                                            <td className="px-6 py-5">
+                                                <div className="flex justify-center items-center gap-3">
+                                                    <button
+                                                        title="Aprobar"
+                                                        onClick={() => cambiarEstado(s, "Aprobada")}
+                                                        className="w-6 h-6 border border-green-500 text-green-500 rounded-md flex items-center justify-center hover:bg-green-50"
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                    </button>
+
+                                                    <button
+                                                        title="Rechazar"
+                                                        onClick={() => cambiarEstado(s, "Rechazada")}
+                                                        className="w-6 h-6 border border-red-500 text-red-500 rounded-md flex items-center justify-center hover:bg-red-50"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+
+                                                    <button
+                                                        title="Editar"
+                                                        onClick={() => abrirEditar(s)}
+                                                        className="text-blue-500 hover:text-blue-600"
+                                                    >
+                                                        <Pencil className="w-4 h-4" />
+                                                    </button>
+
+                                                    <button
+                                                        title="Eliminar"
+                                                        onClick={() => eliminar(s.id)}
+                                                        className="text-red-500 hover:text-red-600"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+
+                                                    <button
+                                                        title="Ver solicitud"
+                                                        onClick={() => verSolicitud(s)}
+                                                        className="text-orange-500 hover:text-orange-600"
+                                                    >
+                                                        <Eye className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })
                             )}
                         </tbody>
                     </table>
@@ -254,7 +363,7 @@ export default function SolicitudesPage() {
                 <div className="px-6 py-4 border-t border-slate-200">
                     <div className="inline-flex items-center border border-slate-400 rounded-lg overflow-hidden">
                         <span className="px-4 py-2 text-sm text-slate-900 border-r border-slate-300">
-                            1 - {solicitudes.length} solicitudes
+                            1 - {solicitudesFiltradas.length} solicitudes
                         </span>
                         <button className="w-10 h-9 text-slate-900 hover:bg-slate-100">
                             ‹
@@ -265,6 +374,129 @@ export default function SolicitudesPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Modal */}
+            {modal && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl p-6">
+                        <div className="flex justify-between items-center mb-5">
+                            <h2 className="text-xl font-bold text-slate-900">
+                                {editando ? "Editar Solicitud" : "Nueva Solicitud"}
+                            </h2>
+
+                            <button
+                                onClick={() => setModal(false)}
+                                className="text-slate-400 hover:text-slate-600"
+                            >
+                                <X />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                    Empleado
+                                </label>
+                                <select
+                                    value={form.empleadoId}
+                                    onChange={(e) =>
+                                        setForm({ ...form, empleadoId: e.target.value })
+                                    }
+                                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
+                                >
+                                    {empleadosMock.map((e) => (
+                                        <option key={e.empleadoId} value={e.empleadoId}>
+                                            {e.nombres} {e.apellidoPaterno} {e.apellidoMaterno}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                    Tipo de solicitud
+                                </label>
+                                <select
+                                    value={form.tipo}
+                                    onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
+                                >
+                                    <option>Permiso Personal</option>
+                                    <option>Vacaciones</option>
+                                    <option>Constancia Laboral</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                    Fecha / Horario
+                                </label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej. 25 Agosto 8:00 - 12:00"
+                                    value={form.fechaHorario}
+                                    onChange={(e) =>
+                                        setForm({ ...form, fechaHorario: e.target.value })
+                                    }
+                                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                    Empresa
+                                </label>
+                                <select
+                                    value={form.empresa}
+                                    onChange={(e) =>
+                                        setForm({ ...form, empresa: e.target.value })
+                                    }
+                                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
+                                >
+                                    <option>Didelco</option>
+                                    <option>Steel</option>
+                                    <option>EFL</option>
+                                </select>
+                            </div>
+
+                            {editando && (
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">
+                                        Estado
+                                    </label>
+                                    <select
+                                        value={form.estado}
+                                        onChange={(e) =>
+                                            setForm({ ...form, estado: e.target.value })
+                                        }
+                                        className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
+                                    >
+                                        <option>Pendiente</option>
+                                        <option>Aprobada</option>
+                                        <option>Rechazada</option>
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end gap-3 mt-6">
+                            <button
+                                onClick={() => setModal(false)}
+                                className="px-5 py-2.5 rounded-lg border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                            >
+                                Cancelar
+                            </button>
+
+                            <button
+                                onClick={guardarSolicitud}
+                                className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
+                            >
+                                {editando ? "Guardar cambios" : "Crear solicitud"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
