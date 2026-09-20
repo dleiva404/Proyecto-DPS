@@ -5,17 +5,42 @@ import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 // Aquí nos conectamos a la BD de firebase que ya tenemos configurada
 import { db } from "@/lib/firebase"; 
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Search, UserPlus } from "lucide-react";
+import type { Rol } from "@/types/usuario";
+import { useAuth } from "@/context/AuthContext";
+
+// Los 6 roles reales del sistema (mismo texto que usan las reglas de Firestore)
+const ROLES: Rol[] = [
+  "AdminTI",
+  "Gerente",
+  "AnalistaNomina",
+  "AsistentePlanilla",
+  "JefeInmediato",
+  "Empleado",
+];
 
 interface Usuario {
   id: string;
   email: string;
-  rol: string;
-  nombre?: string;
+  nombre: string;
+  rol?: string; // ausente si el documento no trae el campo
+}
+
+// Un dato incompleto o inválido no debe disfrazarse de un rol válido
+function esRolValido(rol: string | undefined): rol is Rol {
+  return ROLES.includes(rol as Rol);
+}
+
+function textoRol(rol: string | undefined): string {
+  if (!rol) return "Rol no definido";
+  return esRolValido(rol) ? rol : `Rol no válido (${rol})`;
 }
 
 export default function AdminITPage() {
+  const { firebaseUser } = useAuth();
+  // Evita que un AdminTI se quite a sí mismo el rol y bloquee la gestión de usuarios
+  const esUsuarioActual = (id: string) => id === firebaseUser?.uid;
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
@@ -25,16 +50,16 @@ export default function AdminITPage() {
     const fetchUsuarios = async () => {
       try {
         // Consultamos la colección en firebase para traer a todos los usuarios
-        const querySnapshot = await getDocs(collection(db, "users"));
+        const querySnapshot = await getDocs(collection(db, "usuarios"));
         const listaUsuarios: Usuario[] = [];
-        
+
         querySnapshot.forEach((documento) => {
           const data = documento.data();
           listaUsuarios.push({
             id: documento.id,
-            email: data.email || data.correo || "Sin correo",
-            rol: data.rol || "Empleado",
-            nombre: data.name || data.nombre || "Sin nombre",
+            email: data.email,
+            nombre: data.nombre,
+            rol: data.rol,
           });
         });
 
@@ -51,9 +76,10 @@ export default function AdminITPage() {
 
   // Función para cambiar el rol al toque y guardarlo en la base
   const actualizarRol = async (id: string, nuevoRol: string) => {
+    if (esUsuarioActual(id)) return;
     try {
-      const userRef = doc(db, "users", id);
-      await updateDoc(userRef, { rol: nuevoRol });
+      const userRef = doc(db, "usuarios", id);
+      await updateDoc(userRef, { rol: nuevoRol, updatedAt: serverTimestamp() });
       
       // Actualizamos la lista local para que se vea reflejado al instante
       setUsuarios(usuarios.map(u => u.id === id ? { ...u, rol: nuevoRol } : u));
@@ -171,21 +197,40 @@ export default function AdminITPage() {
                         <td className="p-4 text-slate-700 font-medium">{user.nombre}</td>
                         <td className="p-4 text-slate-600">{user.email}</td>
                         <td className="p-4">
-                          <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-md text-xs border border-blue-200 font-medium">
-                            {user.rol}
+                          <span
+                            className={`px-3 py-1 rounded-md text-xs border font-medium ${
+                              esRolValido(user.rol)
+                                ? "bg-blue-50 text-blue-700 border-blue-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                            }`}
+                          >
+                            {textoRol(user.rol)}
                           </span>
                         </td>
                         <td className="p-4">
-                          <select 
-                            value={user.rol}
+                          <select
+                            value={esRolValido(user.rol) ? user.rol : ""}
                             onChange={(e) => actualizarRol(user.id, e.target.value)}
-                            className="bg-white border border-slate-300 text-slate-700 text-xs rounded-lg p-1.5 focus:ring-blue-500 focus:border-blue-500"
+                            disabled={esUsuarioActual(user.id)}
+                            title={esUsuarioActual(user.id) ? "No puedes cambiar tu propio rol" : undefined}
+                            className="bg-white border border-slate-300 text-slate-700 text-xs rounded-lg p-1.5 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                           >
-                            <option value="Empleado">Empleado</option>
-                            <option value="Gerente">Gerente</option>
-                            <option value="RRHH">Recursos Humanos</option>
-                            <option value="Admin IT">Admin IT</option>
+                            {!esRolValido(user.rol) && (
+                              <option value="" disabled>
+                                {textoRol(user.rol)}
+                              </option>
+                            )}
+                            {ROLES.map((rol) => (
+                              <option key={rol} value={rol}>
+                                {rol}
+                              </option>
+                            ))}
                           </select>
+                          {esUsuarioActual(user.id) && (
+                            <p className="mt-1 text-[10px] text-slate-400">
+                              No puedes cambiar tu propio rol
+                            </p>
+                          )}
                         </td>
                         <td className="p-4">
                           <button 

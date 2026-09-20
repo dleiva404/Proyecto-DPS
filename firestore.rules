@@ -22,7 +22,7 @@ service cloud.firestore {
          rolActual() == 'AdminTI' ||
          rolActual() == 'AsistentePlanilla');
       allow create: if request.auth != null && rolActual() == 'AdminTI';
-      allow update: if request.auth != null && rolActual() == 'AdminTI';
+      allow update: if request.auth != null && rolActual() == 'AdminTI' && request.auth.uid != uid;
       allow delete: if false;
     }
 
