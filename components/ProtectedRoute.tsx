@@ -18,12 +18,12 @@ export default function ProtectedRoute({ children, rolesPermitidos }: Props) {
     if (cargando) return;
 
     if (!usuario) {
-      router.replace("/login");
+      router.replace("/");
       return;
     }
 
     if (rolesPermitidos && !rolesPermitidos.includes(usuario.rol)) {
-      router.replace("/"); // o una página de "no autorizado"
+      router.replace("/dashboard");
     }
   }, [usuario, cargando, rolesPermitidos, router]);
 

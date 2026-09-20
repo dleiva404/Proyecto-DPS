@@ -1,26 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import Image from "next/image";
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, usuario, authError, clearAuthError } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
 
+  // La redirección espera a que el perfil (usuario) esté disponible en el contexto:
+  // aplica tanto al login recién hecho como a quien ya tiene sesión y visita "/"
+  useEffect(() => {
+    if (usuario) router.replace("/dashboard");
+  }, [usuario, router]);
+
+  // Errores de credenciales (local) y de perfil/cuenta detectados por el contexto (authError)
+  const mensajeError = error ?? authError;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    clearAuthError();
     setEnviando(true);
 
     try {
       await login(email, password);
-      router.push("/dashboard");
+      // Sin router.push aquí: la navegación la controla el useEffect de arriba
     } catch {
       setError("Correo o contraseña incorrectos.");
     } finally {
@@ -66,7 +76,7 @@ export default function LoginPage() {
           className="w-full mb-6 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-700"
         />
 
-        {error && <p className="text-xs text-rose-600 mb-4 font-medium">{error}</p>}
+        {mensajeError && <p className="text-xs text-rose-600 mb-4 font-medium">{mensajeError}</p>}
 
         <button
           type="submit"
