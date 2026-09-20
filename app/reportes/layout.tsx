@@ -2,7 +2,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import Sidebar from "@/components/sidebar";
 import Header from "@/components/header";
 
-export default function DashboardLayout({
+export default function ReportesLayout({
   children,
 }: {
   children: React.ReactNode;

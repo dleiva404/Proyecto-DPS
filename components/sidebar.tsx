@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { LayoutDashboard, TrendingUp, FileText, ClipboardList, Shield, LogOut } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -14,8 +15,21 @@ const navItems = [
   { name: "Panel de IT", href: "/admin/it", icon: Shield },
 ];
 
+// Primeras letras de las dos primeras palabras del nombre ("Carlos Calderón" -> "CC")
+function obtenerIniciales(nombre?: string): string {
+  const palabras = nombre?.trim().split(/\s+/).filter(Boolean) ?? [];
+  return palabras.slice(0, 2).map((p) => p[0]).join("").toUpperCase() || "?";
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { usuario, logout } = useAuth();
+
+  async function handleLogout() {
+    await logout();
+    router.replace("/");
+  }
 
   return (
     <aside className="w-64 bg-white text-slate-700 flex flex-col h-screen sticky top-0 border-r border-slate-200 shadow-sm">
@@ -65,15 +79,16 @@ export default function Sidebar() {
       <div className="mt-auto p-4 m-4 mb-6 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-3 overflow-hidden">
           <div className="w-9 h-9 min-w-[36px] rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
-            CC
+            {obtenerIniciales(usuario?.nombre)}
           </div>
           <div className="overflow-hidden leading-tight">
-            <p className="text-xs font-bold text-slate-800 truncate">Carlos Calderón</p>
-            <p className="text-[10px] text-slate-400 mt-0.5 truncate">Gerente</p>
+            <p className="text-xs font-bold text-slate-800 truncate">{usuario?.nombre ?? ""}</p>
+            <p className="text-[10px] text-slate-400 mt-0.5 truncate">{usuario?.rol ?? ""}</p>
           </div>
         </div>
         <button
           type="button"
+          onClick={handleLogout}
           title="Cerrar sesión"
           className="text-slate-400 hover:text-slate-600 transition-colors p-1 rounded-lg hover:bg-slate-200/50"
         >
