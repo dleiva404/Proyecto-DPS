@@ -3,28 +3,57 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
-import { LayoutDashboard, TrendingUp, FileText, ClipboardList, Shield, LogOut } from "lucide-react";
+import {
+  LayoutDashboard,
+  TrendingUp,
+  FileText,
+  ClipboardList,
+  Shield,
+  LogOut,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Reportes", href: "/reportes", icon: TrendingUp },
   { name: "Constancias", href: "/constancias", icon: FileText },
-  { name: "Solicitudes", href: "/solicitudes", icon: ClipboardList, badge: "12" },
+  {
+    name: "Solicitudes",
+    href: "/solicitudes",
+    icon: ClipboardList,
+    badge: "12",
+  },
   // Aquí metimos el panel de IT al suave en la lista
-  { name: "Panel de IT", href: "/admin/it", icon: Shield },
+  {
+    name: "Panel de IT",
+    href: "/admin/it",
+    icon: Shield,
+    rolesPermitidos: ["AdminTI"],
+  },
 ];
 
 // Primeras letras de las dos primeras palabras del nombre ("Carlos Calderón" -> "CC")
 function obtenerIniciales(nombre?: string): string {
   const palabras = nombre?.trim().split(/\s+/).filter(Boolean) ?? [];
-  return palabras.slice(0, 2).map((p) => p[0]).join("").toUpperCase() || "?";
+  return (
+    palabras
+      .slice(0, 2)
+      .map((p) => p[0])
+      .join("")
+      .toUpperCase() || "?"
+  );
 }
 
 export default function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { usuario, logout } = useAuth();
+
+  const itemsVisibles = navItems.filter(
+    (item) =>
+      !item.rolesPermitidos ||
+      (usuario && item.rolesPermitidos.includes(usuario.rol)),
+  );
 
   async function handleLogout() {
     await logout();
@@ -35,9 +64,17 @@ export default function Sidebar() {
     <aside className="w-64 bg-white text-slate-700 flex flex-col h-screen sticky top-0 border-r border-slate-200 shadow-sm">
       {/* 1. Logo y Título de Empresa */}
       <div className="p-6 flex items-center gap-3 border-b border-slate-100">
-        <Image src="/LogoGC.png" alt="Logo" width={36} height={36} className="object-contain" />
+        <Image
+          src="/LogoGC.png"
+          alt="Logo"
+          width={36}
+          height={36}
+          className="object-contain"
+        />
         <div>
-          <span className="font-bold text-slate-900 text-base block leading-tight">GRUPO CALMA</span>
+          <span className="font-bold text-slate-900 text-base block leading-tight">
+            GRUPO CALMA
+          </span>
           <span className="text-xs text-slate-400">Recursos Humanos</span>
         </div>
       </div>
@@ -48,7 +85,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="px-4 space-y-1">
-        {navItems.map((item) => {
+        {itemsVisibles.map((item) => {
           const isActive = pathname === item.href;
           const IconComponent = item.icon;
           return (
@@ -62,7 +99,9 @@ export default function Sidebar() {
               }`}
             >
               <div className="flex items-center gap-3">
-                <IconComponent className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
+                <IconComponent
+                  className={`w-5 h-5 ${isActive ? "text-blue-600" : "text-slate-400"}`}
+                />
                 {item.name}
               </div>
               {item.badge && (
@@ -82,8 +121,12 @@ export default function Sidebar() {
             {obtenerIniciales(usuario?.nombre)}
           </div>
           <div className="overflow-hidden leading-tight">
-            <p className="text-xs font-bold text-slate-800 truncate">{usuario?.nombre ?? ""}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5 truncate">{usuario?.rol ?? ""}</p>
+            <p className="text-xs font-bold text-slate-800 truncate">
+              {usuario?.nombre ?? ""}
+            </p>
+            <p className="text-[10px] text-slate-400 mt-0.5 truncate">
+              {usuario?.rol ?? ""}
+            </p>
           </div>
         </div>
         <button

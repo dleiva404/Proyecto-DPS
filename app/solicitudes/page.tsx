@@ -10,12 +10,33 @@ import {
   CalendarDays,
   Plus,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { solicitudesMock } from "@/mocks/solicitudes";
 import { empleadosMock } from "@/mocks/empleados";
 import { contarDiasHabiles } from "@/services/vacacionesService";
+import {
+  puedeActuar,
+  avanzarSolicitud,
+  etiquetaEtapa,
+  etapaInicial,
+  type RolAprobador,
+} from "@/services/aprobacionesService";
+import { crearNotificacion } from "@/services/notificacionesService";
 import type { Solicitud } from "@/types/solicitud";
 
+const ROLES_CON_ACCESO_WEB: RolAprobador[] = [
+  "AnalistaNomina",
+  "Gerente",
+  "JefeInmediato",
+];
+
 export default function SolicitudesPage() {
+  const { usuario } = useAuth();
+
+  const rolActual: RolAprobador | null =
+    usuario && ROLES_CON_ACCESO_WEB.includes(usuario.rol as RolAprobador)
+      ? (usuario.rol as RolAprobador)
+      : null;
   const [solicitudes, setSolicitudes] = useState<Solicitud[]>(solicitudesMock);
   const [categoria, setCategoria] = useState("Todos");
   const [empresa, setEmpresa] = useState("Todas");
@@ -23,8 +44,15 @@ export default function SolicitudesPage() {
   const [fecha, setFecha] = useState("");
   const [modal, setModal] = useState(false);
   const [editando, setEditando] = useState<Solicitud | null>(null);
+  const [analistaDisponible, setAnalistaDisponible] = useState(true);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<{
+    empleadoId: string;
+    tipo: string;
+    fechaHorario: string;
+    empresa: string;
+    estado: "Pendiente" | "Aprobada" | "Rechazada";
+  }>({
     empleadoId: "E001",
     tipo: "Permiso Personal",
     fechaHorario: "",
@@ -133,7 +161,7 @@ export default function SolicitudesPage() {
     setModal(true);
   };
 
-  const guardarSolicitud = () => {
+  const guardarSolicitud = async () => {
     if (!form.fechaHorario.trim()) {
       alert("Ingresa la fecha de la solicitud.");
       return;
@@ -144,12 +172,27 @@ export default function SolicitudesPage() {
         actuales.map((s) => (s.id === editando.id ? { ...s, ...form } : s)),
       );
     } else {
+      const etapa = etapaInicial(form.tipo);
       const nueva: Solicitud = {
         id: Date.now().toString(),
         ...form,
+        etapaActual: etapa,
+        historial: [],
       };
 
       setSolicitudes((actuales) => [...actuales, nueva]);
+
+      if (etapa) {
+        try {
+          await crearNotificacion(
+            etapa,
+            `Nueva solicitud de ${form.tipo} pendiente de revisión`,
+            nueva.id,
+          );
+        } catch (error) {
+          console.error("No se pudo crear la notificación:", error);
+        }
+      }
     }
 
     setModal(false);
@@ -161,10 +204,56 @@ export default function SolicitudesPage() {
     setSolicitudes((actuales) => actuales.filter((s) => s.id !== id));
   };
 
-  const cambiarEstado = (solicitud: Solicitud, estado: string) => {
-    setSolicitudes((actuales) =>
-      actuales.map((s) => (s.id === solicitud.id ? { ...s, estado } : s)),
-    );
+  const tieneFlujo = (tipo: string) =>
+    tipo === "Vacaciones" || tipo.toLowerCase().includes("permiso");
+
+  const actuarSobreSolicitud = async (
+    solicitud: Solicitud,
+    accion: "Aprobado" | "Rechazado",
+  ) => {
+    if (!tieneFlujo(solicitud.tipo)) {
+      setSolicitudes((actuales) =>
+        actuales.map((s) =>
+          s.id === solicitud.id
+            ? { ...s, estado: accion === "Aprobado" ? "Aprobada" : "Rechazada" }
+            : s,
+        ),
+      );
+      return;
+    }
+
+    if (!rolActual) {
+      alert("Tu rol no puede aprobar ni rechazar solicitudes.");
+      return;
+    }
+
+    try {
+      const actualizada = avanzarSolicitud(
+        solicitud as Parameters<typeof avanzarSolicitud>[0],
+        accion,
+        rolActual,
+        analistaDisponible,
+      );
+      setSolicitudes((actuales) =>
+        actuales.map((s) =>
+          s.id === solicitud.id ? { ...s, ...actualizada } : s,
+        ),
+      );
+
+      if (actualizada.etapaActual) {
+        await crearNotificacion(
+          actualizada.etapaActual,
+          `Tienes una solicitud de ${solicitud.tipo} pendiente de tu revisión`,
+          solicitud.id,
+        );
+      }
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "No se pudo procesar la solicitud.",
+      );
+    }
   };
 
   const verSolicitud = (s: Solicitud) => {
@@ -182,7 +271,7 @@ export default function SolicitudesPage() {
             Gestión de solicitudes
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Viernes 12 de Agosto de 2026
+            Actuando como: <strong>{usuario?.nombre}</strong> ({usuario?.rol})
           </p>
         </div>
 
@@ -194,6 +283,20 @@ export default function SolicitudesPage() {
           Nueva Solicitud
         </button>
       </div>
+
+      {rolActual === "Gerente" && (
+        <div className="flex items-center gap-3 mb-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <label className="flex items-center gap-2 text-xs font-semibold text-amber-800">
+            <input
+              type="checkbox"
+              checked={analistaDisponible}
+              onChange={(e) => setAnalistaDisponible(e.target.checked)}
+            />
+            Analista de Nómina disponible (si se desmarca, tú puedes sustituirla
+            en permisos)
+          </label>
+        </div>
+      )}
 
       {/* Categorías */}
       <div className="grid grid-cols-4 gap-5 mb-6">
@@ -269,7 +372,7 @@ export default function SolicitudesPage() {
                   "Tipo",
                   "Fecha / Horario",
                   "Empresa",
-                  "Estado",
+                  "Estado / Etapa",
                   "Acciones",
                 ].map((titulo) => (
                   <th
@@ -297,6 +400,17 @@ export default function SolicitudesPage() {
               ) : (
                 solicitudesFiltradas.map((s) => {
                   const e = empleados[s.empleadoId];
+                  const conFlujo = tieneFlujo(s.tipo);
+                  const puedeAprobar =
+                    s.estado === "Pendiente" &&
+                    (!conFlujo ||
+                      (rolActual !== null &&
+                        puedeActuar(
+                          s.tipo,
+                          rolActual,
+                          s.etapaActual ?? null,
+                          analistaDisponible,
+                        )));
 
                   return (
                     <tr
@@ -333,23 +447,35 @@ export default function SolicitudesPage() {
                               : "text-red-600"
                         }`}
                       >
-                        {s.estado}
+                        {conFlujo
+                          ? etiquetaEtapa(s.etapaActual ?? null, s.estado)
+                          : s.estado}
                       </td>
 
                       <td className="px-6 py-5">
                         <div className="flex justify-center items-center gap-3">
                           <button
-                            title="Aprobar"
-                            onClick={() => cambiarEstado(s, "Aprobada")}
-                            className="w-6 h-6 border border-green-500 text-green-500 rounded-md flex items-center justify-center hover:bg-green-50"
+                            title={
+                              puedeAprobar
+                                ? "Aprobar"
+                                : "No puedes actuar en esta etapa"
+                            }
+                            onClick={() => actuarSobreSolicitud(s, "Aprobado")}
+                            disabled={!puedeAprobar}
+                            className="w-6 h-6 border border-green-500 text-green-500 rounded-md flex items-center justify-center hover:bg-green-50 disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <Check className="w-4 h-4" />
                           </button>
 
                           <button
-                            title="Rechazar"
-                            onClick={() => cambiarEstado(s, "Rechazada")}
-                            className="w-6 h-6 border border-red-500 text-red-500 rounded-md flex items-center justify-center hover:bg-red-50"
+                            title={
+                              puedeAprobar
+                                ? "Rechazar"
+                                : "No puedes actuar en esta etapa"
+                            }
+                            onClick={() => actuarSobreSolicitud(s, "Rechazado")}
+                            disabled={!puedeAprobar}
+                            className="w-6 h-6 border border-red-500 text-red-500 rounded-md flex items-center justify-center hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -609,7 +735,13 @@ export default function SolicitudesPage() {
                   <select
                     value={form.estado}
                     onChange={(e) =>
-                      setForm({ ...form, estado: e.target.value })
+                      setForm({
+                        ...form,
+                        estado: e.target.value as
+                          | "Pendiente"
+                          | "Aprobada"
+                          | "Rechazada",
+                      })
                     }
                     className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
                   >

@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from "react";
 // Aquí nos conectamos a la BD de firebase que ya tenemos configurada
-import { db } from "@/lib/firebase"; 
-import { collection, getDocs, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { Search, UserPlus } from "lucide-react";
 import type { Rol } from "@/types/usuario";
 import { useAuth } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Los 6 roles reales del sistema (mismo texto que usan las reglas de Firestore)
 const ROLES: Rol[] = [
@@ -35,7 +42,7 @@ function textoRol(rol: string | undefined): string {
   return esRolValido(rol) ? rol : `Rol no válido (${rol})`;
 }
 
-export default function AdminITPage() {
+function AdminITContenido() {
   const { firebaseUser } = useAuth();
   // Evita que un AdminTI se quite a sí mismo el rol y bloquee la gestión de usuarios
   const esUsuarioActual = (id: string) => id === firebaseUser?.uid;
@@ -63,7 +70,10 @@ export default function AdminITPage() {
 
         setUsuarios(listaUsuarios);
       } catch (error) {
-        console.error("Puchica, falló al cargar los usuarios de firebase:", error);
+        console.error(
+          "Puchica, falló al cargar los usuarios de firebase:",
+          error,
+        );
       } finally {
         setLoading(false);
       }
@@ -78,9 +88,11 @@ export default function AdminITPage() {
     try {
       const userRef = doc(db, "usuarios", id);
       await updateDoc(userRef, { rol: nuevoRol, updatedAt: serverTimestamp() });
-      
+
       // Actualizamos la lista local para que se vea reflejado al instante
-      setUsuarios(usuarios.map(u => u.id === id ? { ...u, rol: nuevoRol } : u));
+      setUsuarios(
+        usuarios.map((u) => (u.id === id ? { ...u, rol: nuevoRol } : u)),
+      );
       alert("¡Listos los cambios, rol actualizado!");
     } catch (error) {
       console.error("Error al actualizar el rol:", error);
@@ -92,30 +104,40 @@ export default function AdminITPage() {
   const usuariosFiltrados = usuarios.filter(
     (u) =>
       (u.nombre && u.nombre.toLowerCase().includes(busqueda.toLowerCase())) ||
-      (u.email && u.email.toLowerCase().includes(busqueda.toLowerCase()))
+      (u.email && u.email.toLowerCase().includes(busqueda.toLowerCase())),
   );
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Panel de Administrador de IT</h1>
+        <h1 className="text-2xl font-bold text-slate-800">
+          Panel de Administrador de IT
+        </h1>
         <p className="text-xs text-slate-500 uppercase tracking-wider mt-1">
-          Control de accesos y permisos por roles 
+          Control de accesos y permisos por roles
         </p>
       </div>
 
       {/* Tarjetas de métricas rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-slate-500 text-xs font-semibold uppercase">Cuentas Registradas</p>
-          <p className="text-3xl font-bold text-slate-800 mt-2">{loading ? "..." : usuarios.length}</p>
+          <p className="text-slate-500 text-xs font-semibold uppercase">
+            Cuentas Registradas
+          </p>
+          <p className="text-3xl font-bold text-slate-800 mt-2">
+            {loading ? "..." : usuarios.length}
+          </p>
         </div>
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-slate-500 text-xs font-semibold uppercase">Incidencias de Acceso</p>
+          <p className="text-slate-500 text-xs font-semibold uppercase">
+            Incidencias de Acceso
+          </p>
           <p className="text-3xl font-bold text-amber-600 mt-2">0</p>
         </div>
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
-          <p className="text-slate-500 text-xs font-semibold uppercase">Estado de Firebase</p>
+          <p className="text-slate-500 text-xs font-semibold uppercase">
+            Estado de Firebase
+          </p>
           <p className="text-3xl font-bold text-blue-600 mt-2 flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
             Conectado
@@ -131,7 +153,9 @@ export default function AdminITPage() {
               Directorio de Usuarios del Sistema
             </h2>
             <span className="text-xs text-slate-500 font-medium">
-              {loading ? "Cargando..." : `Total: ${usuariosFiltrados.length} usuario(s)`}
+              {loading
+                ? "Cargando..."
+                : `Total: ${usuariosFiltrados.length} usuario(s)`}
             </span>
           </div>
 
@@ -150,7 +174,9 @@ export default function AdminITPage() {
 
             {/* Botón Nuevo Usuario */}
             <button
-              onClick={() => alert("Aquí puedes abrir tu modal de registro de usuario")}
+              onClick={() =>
+                alert("Aquí puedes abrir tu modal de registro de usuario")
+              }
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm shrink-0"
             >
               <UserPlus className="w-4 h-4" />
@@ -185,8 +211,13 @@ export default function AdminITPage() {
                 </tr>
               ) : (
                 usuariosFiltrados.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4 text-slate-700 font-medium">{user.nombre}</td>
+                  <tr
+                    key={user.id}
+                    className="hover:bg-slate-50/80 transition-colors"
+                  >
+                    <td className="p-4 text-slate-700 font-medium">
+                      {user.nombre}
+                    </td>
                     <td className="p-4 text-slate-600">{user.email}</td>
                     <td className="p-4">
                       <span
@@ -204,7 +235,11 @@ export default function AdminITPage() {
                         value={esRolValido(user.rol) ? user.rol : ""}
                         onChange={(e) => actualizarRol(user.id, e.target.value)}
                         disabled={esUsuarioActual(user.id)}
-                        title={esUsuarioActual(user.id) ? "No puedes cambiar tu propio rol" : undefined}
+                        title={
+                          esUsuarioActual(user.id)
+                            ? "No puedes cambiar tu propio rol"
+                            : undefined
+                        }
                         className="bg-white border border-slate-300 text-slate-700 text-xs rounded-lg p-1.5 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         {!esRolValido(user.rol) && (
@@ -225,8 +260,12 @@ export default function AdminITPage() {
                       )}
                     </td>
                     <td className="p-4">
-                      <button 
-                        onClick={() => alert(`Enviando correo para resetear clave a ${user.email}`)}
+                      <button
+                        onClick={() =>
+                          alert(
+                            `Enviando correo para resetear clave a ${user.email}`,
+                          )
+                        }
                         className="bg-cyan-600 hover:bg-cyan-700 text-white font-medium px-4 py-1.5 rounded-lg text-xs transition shadow-sm"
                       >
                         Restablecer Clave
@@ -240,5 +279,12 @@ export default function AdminITPage() {
         </div>
       </div>
     </div>
+  );
+}
+export default function AdminITPage() {
+  return (
+    <ProtectedRoute rolesPermitidos={["AdminTI"]}>
+      <AdminITContenido />
+    </ProtectedRoute>
   );
 }

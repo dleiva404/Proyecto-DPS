@@ -10,7 +10,7 @@ service cloud.firestore {
 
     function esRolAdministrativo() {
       return request.auth != null &&
-        rolActual() in ['AdminTI', 'Gerente', 'AnalistaNomina', 'AsistentePlanilla'];
+        rolActual() in ['AdminTI', 'Gerente', 'AnalistaNomina', 'AsistentePlanilla', 'JefeInmediato'];
     }
 
     // usuarios/{uid}: cada quien lee su propio documento;
@@ -41,6 +41,16 @@ service cloud.firestore {
         (esRolAdministrativo() || resource.data.empleadoUid == request.auth.uid);
       allow create: if request.auth != null; // el empleado crea su propia solicitud
       allow update, delete: if esRolAdministrativo();
+    }
+
+    // notificaciones: cada quien solo ve/actualiza las dirigidas a su propio rol;
+    // cualquier usuario autenticado puede crear una (ej. al crear/avanzar una solicitud);
+    // nadie las elimina (se marcan como leídas, no se borran)
+    match /notificaciones/{notifId} {
+      allow read: if request.auth != null && resource.data.rolDestino == rolActual();
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && resource.data.rolDestino == rolActual();
+      allow delete: if false;
     }
   }
 }

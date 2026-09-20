@@ -338,7 +338,7 @@ async function obtenerLogoBytes(): Promise<Uint8Array> {
 }
 
 export function descargarPDF(pdfBytes: Uint8Array, nombreArchivo: string) {
-  const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  const blob = new Blob([pdfBytes] as BlobPart[], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const enlace = document.createElement("a");
   enlace.href = url;
