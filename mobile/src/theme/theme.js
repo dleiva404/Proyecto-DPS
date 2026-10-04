@@ -1,14 +1,20 @@
 export const theme = {
   colors: {
     primary: "#2563EB",
+    primaryDark: "#1E293B",
     secondary: "#334155",
     accent: "#D4AF37",
-    background: "#F1F5F9",
+    background: "#F8FAFC",
     card: "#FFFFFF",
+    cardBackground: "#FFFFFF",
     text: "#1E293B",
+    textPrimary: "#1E293B",
+    textSecondary: "#64748B",
     textMuted: "#64748B",
     error: "#DC2626",
-    border: "#CBD5E1",
+    warning: "#F59E0B",
+    success: "#10B981",
+    border: "#E2E8F0",
   },
   spacing: {
     sm: 8,
@@ -17,8 +23,8 @@ export const theme = {
   },
   borderRadius: {
     sm: 8,
-    md: 10,
-    lg: 12,
+    md: 12,
+    lg: 16,
   },
 };
 
