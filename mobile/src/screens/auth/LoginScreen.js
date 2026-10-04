@@ -7,10 +7,12 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
+import CustomButton from "../../components/CustomButton";
 
-// valida formato de correo
 const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginScreen() {
@@ -47,94 +49,149 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Text style={styles.titulo}>RRHH Didelco</Text>
-      <Text style={styles.subtitulo}>Inicia sesion para continuar</Text>
+      <View style={styles.content}>
+        <View style={styles.headerContainer}>
+          <Image 
+            source={require("../../../assets/LogoGC.png")} 
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <View>
+            <Text style={styles.titulo}>Gestión Recursos Humanos</Text>
+            <Text style={styles.subtitulo}>Grupo Calma</Text>
+          </View>
+        </View>
 
-      <Text style={styles.label}>Correo</Text>
-      <TextInput
-        style={[styles.input, errores.correo && styles.inputError]}
-        placeholder="usuario@didelco.com"
-        value={correo}
-        onChangeText={setCorreo}
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      {errores.correo && <Text style={styles.error}>{errores.correo}</Text>}
+        <Text style={styles.instructions}>Ingrese sus credenciales para continuar</Text>
 
-      <Text style={styles.label}>Contraseña</Text>
-      <View style={styles.filaClave}>
+        <Text style={styles.label}>CORREO</Text>
         <TextInput
-          style={[
-            styles.input,
-            { flex: 1 },
-            errores.clave && styles.inputError,
-          ]}
-          placeholder="******"
-          value={clave}
-          onChangeText={setClave}
-          secureTextEntry={!verClave}
+          style={[styles.input, errores.correo && styles.inputError]}
+          placeholder="rrhh@didelco.com"
+          placeholderTextColor="#94a3b8"
+          value={correo}
+          onChangeText={setCorreo}
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
-        <TouchableOpacity
-          onPress={() => setVerClave(!verClave)}
-          style={styles.btnVer}
-        >
-          <Text style={styles.txtVer}>{verClave ? "Ocultar" : "Ver"}</Text>
-        </TouchableOpacity>
+        {errores.correo && <Text style={styles.error}>{errores.correo}</Text>}
+
+        <Text style={styles.label}>CONTRASEÑA / PIN</Text>
+        <View style={[styles.inputWrapper, errores.clave && styles.inputError]}>
+          <TextInput
+            style={styles.inputClave}
+            placeholder="********"
+            placeholderTextColor="#94a3b8"
+            value={clave}
+            onChangeText={setClave}
+            secureTextEntry={!verClave}
+          />
+          <TouchableOpacity
+            onPress={() => setVerClave(!verClave)}
+            style={styles.btnVer}
+          >
+            <Ionicons
+              name={verClave ? "eye-off-outline" : "eye-outline"}
+              size={22}
+              color="#64748B"
+            />
+          </TouchableOpacity>
+        </View>
+        {errores.clave && <Text style={styles.error}>{errores.clave}</Text>}
+
+        {errorGeneral ? (
+          <Text style={styles.errorGeneral}>{errorGeneral}</Text>
+        ) : null}
+
+        <CustomButton
+          title="Iniciar Sesión"
+          type="primary"
+          onPress={handleLogin}
+          style={styles.boton}
+        />
       </View>
-      {errores.clave && <Text style={styles.error}>{errores.clave}</Text>}
-
-      {errorGeneral ? (
-        <Text style={styles.errorGeneral}>{errorGeneral}</Text>
-      ) : null}
-
-      <TouchableOpacity style={styles.boton} onPress={handleLogin}>
-        <Text style={styles.txtBoton}>Iniciar sesion</Text>
-      </TouchableOpacity>
     </KeyboardAvoidingView>
   );
 }
 
-// colores temporales
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    padding: 24,
-    backgroundColor: "#fff",
+    paddingHorizontal: 28,
+    backgroundColor: "#ffffff",
+  },
+  content: {
+    width: "100%",
+  },
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  logoImage: {
+    width: 54,
+    height: 54,
+    borderRadius: 8,
+    marginRight: 14,
   },
   titulo: {
-    fontSize: 28,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#1e3a8a",
-    textAlign: "center",
+    color: "#1E293B",
   },
   subtitulo: {
     fontSize: 14,
-    color: "#6b7280",
-    textAlign: "center",
-    marginBottom: 32,
+    color: "#64748B",
+    marginTop: 2,
   },
-  label: { fontSize: 14, fontWeight: "600", marginBottom: 6, marginTop: 12 },
+  instructions: {
+    fontSize: 15,
+    color: "#64748B",
+    marginBottom: 20,
+  },
+  label: { 
+    fontSize: 12, 
+    fontWeight: "bold", 
+    color: "#475569", 
+    marginBottom: 6, 
+    marginTop: 14,
+    letterSpacing: 0.5,
+  },
   input: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: "#CBD5E1",
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "#1E293B",
+    backgroundColor: "#F8FAFC",
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderRadius: 8,
+    backgroundColor: "#F8FAFC",
+    paddingRight: 8,
+  },
+  inputClave: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "#1E293B",
   },
   inputError: { borderColor: "#dc2626" },
-  filaClave: { flexDirection: "row", alignItems: "center" },
-  btnVer: { marginLeft: 8, padding: 8 },
-  txtVer: { color: "#1e3a8a", fontWeight: "600" },
+  btnVer: { padding: 8 },
   error: { color: "#dc2626", fontSize: 12, marginTop: 4 },
   errorGeneral: { color: "#dc2626", textAlign: "center", marginTop: 16 },
   boton: {
-    backgroundColor: "#1e3a8a",
-    paddingVertical: 14,
-    borderRadius: 8,
     marginTop: 28,
-    alignItems: "center",
   },
-  txtBoton: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });
