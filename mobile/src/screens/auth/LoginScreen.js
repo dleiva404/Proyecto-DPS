@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  StatusBar,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
@@ -49,22 +50,21 @@ export default function LoginScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.content}>
-        <View style={styles.headerContainer}>
-          <Image 
-            source={require("../../../assets/LogoGC.png")} 
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <View>
-            <Text style={styles.titulo}>Gestión Recursos Humanos</Text>
-            <Text style={styles.subtitulo}>Grupo Calma</Text>
-          </View>
-        </View>
-
+      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+      
+      <View style={styles.headerContainer}>
+        <Image 
+          source={require("../../../assets/LogoGC.png")} 
+          style={styles.logoImage}
+          resizeMode="contain"
+        />
+        <Text style={styles.titulo}>Gestión Recursos Humanos</Text>
+        <Text style={styles.subtitulo}>Grupo Calma</Text>
         <Text style={styles.instructions}>Ingrese sus credenciales para continuar</Text>
+      </View>
 
-        <Text style={styles.label}>CORREO</Text>
+      <View style={styles.formContainer}>
+        <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
         <TextInput
           style={[styles.input, errores.correo && styles.inputError]}
           placeholder="rrhh@didelco.com"
@@ -80,7 +80,7 @@ export default function LoginScreen() {
         <View style={[styles.inputWrapper, errores.clave && styles.inputError]}>
           <TextInput
             style={styles.inputClave}
-            placeholder="********"
+            placeholder="••••••••"
             placeholderTextColor="#94a3b8"
             value={clave}
             onChangeText={setClave}
@@ -118,80 +118,81 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 28,
+    paddingHorizontal: 24,
     backgroundColor: "#ffffff",
   },
-  content: {
-    width: "100%",
-  },
   headerContainer: {
-    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+    marginBottom: 36,
   },
   logoImage: {
-    width: 54,
-    height: 54,
-    borderRadius: 8,
-    marginRight: 14,
+    width: 84,
+    height: 84,
+    marginBottom: 16,
   },
   titulo: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
     color: "#1E293B",
+    textAlign: "center",
   },
   subtitulo: {
-    fontSize: 14,
-    color: "#64748B",
-    marginTop: 2,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#475569",
+    marginTop: 4,
+    letterSpacing: 0.5,
   },
   instructions: {
-    fontSize: 15,
+    fontSize: 14,
     color: "#64748B",
-    marginBottom: 20,
+    marginTop: 10,
+    textAlign: "center",
+  },
+  formContainer: {
+    width: "100%",
   },
   label: { 
     fontSize: 12, 
-    fontWeight: "bold", 
-    color: "#475569", 
-    marginBottom: 6, 
-    marginTop: 14,
+    fontWeight: "700", 
+    color: "#334155", 
+    marginBottom: 8, 
+    marginTop: 18,
     letterSpacing: 0.5,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    backgroundColor: "#F1F5F9",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 15,
     color: "#1E293B",
-    backgroundColor: "#F8FAFC",
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    borderRadius: 8,
-    backgroundColor: "#F8FAFC",
-    paddingRight: 8,
+    backgroundColor: "#F1F5F9",
+    borderRadius: 12,
+    paddingRight: 10,
   },
   inputClave: {
     flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     fontSize: 15,
     color: "#1E293B",
   },
-  inputError: { borderColor: "#dc2626" },
+  inputError: { 
+    borderWidth: 1,
+    borderColor: "#dc2626",
+    backgroundColor: "#FEF2F2",
+  },
   btnVer: { padding: 8 },
   error: { color: "#dc2626", fontSize: 12, marginTop: 4 },
   errorGeneral: { color: "#dc2626", textAlign: "center", marginTop: 16 },
   boton: {
-    marginTop: 28,
+    marginTop: 32,
+    paddingVertical: 15,
+    borderRadius: 12,
   },
 });
