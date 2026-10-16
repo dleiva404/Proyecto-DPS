@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from "react";
 import {
   View,
@@ -12,10 +11,15 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import { theme } from "../../theme/theme";
+import { formatearFecha } from "../../services/formato";
 import {
   listarVacacionesPendientesPorRol,
   decidirSolicitudVacaciones,
 } from "../../services/solicitudesVacacionesService";
+import {
+  pendientesDeEquipo,
+  decidir as decidirPermiso,
+} from "../../services/solicitudesService";
 
 const ETIQUETAS = {
   ANALISTA: "Analista de Nómina",
@@ -23,29 +27,32 @@ const ETIQUETAS = {
   JEFE: "Jefe inmediato",
 };
 
-export default function BandejaAprobacionesScreen() {
+export default function BandejaAprobacionesScreen({ navigation }) {
   const { usuario } = useAuth();
-  const [solicitudes, setSolicitudes] = useState([]);
+  const [vacaciones, setVacaciones] = useState([]);
+  const [permisos, setPermisos] = useState([]);
   const [rechazoId, setRechazoId] = useState(null);
   const [motivoRechazo, setMotivoRechazo] = useState("");
 
   const rol = usuario?.rol;
 
-  const cargarSolicitudes = useCallback(() => {
+  const cargar = useCallback(() => {
     if (["ANALISTA", "GERENTE", "JEFE"].includes(rol)) {
-      setSolicitudes(listarVacacionesPendientesPorRol(rol));
+      setVacaciones(listarVacacionesPendientesPorRol(rol));
     } else {
-      setSolicitudes([]);
+      setVacaciones([]);
     }
-  }, [rol]);
+    setPermisos(usuario ? pendientesDeEquipo(usuario) : []);
+  }, [rol, usuario]);
 
   useFocusEffect(
     useCallback(() => {
-      cargarSolicitudes();
-    }, [cargarSolicitudes]),
+      cargar();
+    }, [cargar]),
   );
 
-  const decidir = (solicitud, decision) => {
+  // ---- vacaciones ----
+  const decidirVacacion = (solicitud, decision) => {
     if (decision === "Rechazar" && !motivoRechazo.trim()) {
       Alert.alert(
         "Motivo requerido",
@@ -77,7 +84,7 @@ export default function BandejaAprobacionesScreen() {
 
             setRechazoId(null);
             setMotivoRechazo("");
-            cargarSolicitudes();
+            cargar();
 
             Alert.alert(
               "Solicitud actualizada",
@@ -93,112 +100,152 @@ export default function BandejaAprobacionesScreen() {
     );
   };
 
+  // ---- permisos ----
+  const aprobarPermiso = (id) => {
+    const resultado = decidirPermiso(usuario, id, "Aprobado");
+    if (!resultado.ok) {
+      Alert.alert("No se pudo procesar", resultado.error);
+      return;
+    }
+    cargar();
+    Alert.alert(
+      "Permiso aprobado",
+      "Pasa a revisión de la Analista de Nómina.",
+    );
+  };
+
+  const sinPendientes = vacaciones.length === 0 && permisos.length === 0;
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contenido}
     >
-      <Text style={styles.titulo}>Bandeja de aprobaciones</Text>
       <Text style={styles.subtitulo}>
         {ETIQUETAS[rol] || "Usuario"} · Solicitudes pendientes
       </Text>
 
-      {solicitudes.length === 0 ? (
+      {sinPendientes && (
         <View style={styles.vacio}>
-          <Text style={styles.vacioTitulo}>
-            No hay solicitudes pendientes
-          </Text>
+          <Text style={styles.vacioTitulo}>No hay solicitudes pendientes</Text>
           <Text style={styles.vacioTexto}>
             Cuando haya solicitudes para tu etapa, aparecerán aquí.
           </Text>
         </View>
-      ) : (
-        solicitudes.map((solicitud) => (
-          <View key={solicitud.id} style={styles.tarjeta}>
-            <View style={styles.fila}>
-              <Text style={styles.id}>{solicitud.id}</Text>
-              <Text style={styles.estado}>Pendiente</Text>
-            </View>
+      )}
 
-            <Text style={styles.empleado}>
-              {solicitud.empleadoNombre}
-            </Text>
-            <Text style={styles.detalle}>
-              Tipo: {solicitud.tipo}
-            </Text>
-            <Text style={styles.detalle}>
-              Departamento: {solicitud.departamento || "No indicado"}
-            </Text>
-            <Text style={styles.detalle}>
-              Inicio: {solicitud.fechaInicio}
-            </Text>
-            <Text style={styles.detalle}>
-              Fin: {solicitud.fechaFin}
-            </Text>
-            <Text style={styles.detalle}>
-              Días hábiles: {solicitud.diasSolicitados}
-            </Text>
-            <Text style={styles.motivoTitulo}>Motivo de la solicitud</Text>
-            <Text style={styles.detalle}>{solicitud.motivo}</Text>
+      {vacaciones.length > 0 && (
+        <Text style={styles.seccion}>Vacaciones ({vacaciones.length})</Text>
+      )}
 
-            {rechazoId === solicitud.id && (
-              <View style={styles.formRechazo}>
-                <Text style={styles.motivoTitulo}>
-                  Motivo del rechazo
-                </Text>
-                <TextInput
-                  style={styles.input}
-                  value={motivoRechazo}
-                  onChangeText={setMotivoRechazo}
-                  placeholder="Explica por qué se rechaza"
-                  multiline
-                  textAlignVertical="top"
-                />
-                <TouchableOpacity
-                  style={styles.botonCancelar}
-                  onPress={() => {
-                    setRechazoId(null);
-                    setMotivoRechazo("");
-                  }}
-                >
-                  <Text style={styles.textoCancelar}>
-                    Cancelar rechazo
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+      {vacaciones.map((solicitud) => (
+        <View key={solicitud.id} style={styles.tarjeta}>
+          <View style={styles.fila}>
+            <Text style={styles.id}>{solicitud.id}</Text>
+            <Text style={styles.estado}>Pendiente</Text>
+          </View>
 
-            <View style={styles.botones}>
+          <Text style={styles.empleado}>{solicitud.empleadoNombre}</Text>
+          <Text style={styles.detalle}>
+            Departamento: {solicitud.departamento || "No indicado"}
+          </Text>
+          <Text style={styles.detalle}>
+            Del {formatearFecha(solicitud.fechaInicio)} al{" "}
+            {formatearFecha(solicitud.fechaFin)}
+          </Text>
+          <Text style={styles.detalle}>
+            Días hábiles: {solicitud.diasSolicitados}
+          </Text>
+          <Text style={styles.motivoTitulo}>Motivo de la solicitud</Text>
+          <Text style={styles.detalle}>{solicitud.motivo}</Text>
+
+          {rechazoId === solicitud.id && (
+            <View style={styles.formRechazo}>
+              <Text style={styles.motivoTitulo}>Motivo del rechazo</Text>
+              <TextInput
+                style={styles.input}
+                value={motivoRechazo}
+                onChangeText={setMotivoRechazo}
+                placeholder="Explica por qué se rechaza"
+                multiline
+                textAlignVertical="top"
+              />
               <TouchableOpacity
-                style={styles.botonAprobar}
-                onPress={() => decidir(solicitud, "Aprobar")}
-              >
-                <Text style={styles.textoBoton}>
-                  Aprobar
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.botonRechazar}
+                style={styles.botonCancelar}
                 onPress={() => {
-                  if (rechazoId === solicitud.id) {
-                    decidir(solicitud, "Rechazar");
-                  } else {
-                    setRechazoId(solicitud.id);
-                    setMotivoRechazo("");
-                  }
+                  setRechazoId(null);
+                  setMotivoRechazo("");
                 }}
               >
-                <Text style={styles.textoBoton}>
-                  {rechazoId === solicitud.id
-                    ? "Confirmar rechazo"
-                    : "Rechazar"}
-                </Text>
+                <Text style={styles.textoCancelar}>Cancelar rechazo</Text>
               </TouchableOpacity>
             </View>
+          )}
+
+          <View style={styles.botones}>
+            <TouchableOpacity
+              style={styles.botonAprobar}
+              onPress={() => decidirVacacion(solicitud, "Aprobar")}
+            >
+              <Text style={styles.textoBoton}>Aprobar</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.botonRechazar}
+              onPress={() => {
+                if (rechazoId === solicitud.id) {
+                  decidirVacacion(solicitud, "Rechazar");
+                } else {
+                  setRechazoId(solicitud.id);
+                  setMotivoRechazo("");
+                }
+              }}
+            >
+              <Text style={styles.textoBoton}>
+                {rechazoId === solicitud.id ? "Confirmar rechazo" : "Rechazar"}
+              </Text>
+            </TouchableOpacity>
           </View>
-        ))
+        </View>
+      ))}
+
+      {permisos.length > 0 && (
+        <Text style={styles.seccion}>Permisos ({permisos.length})</Text>
       )}
+
+      {permisos.map((s) => (
+        <View key={s.id} style={styles.tarjeta}>
+          <View style={styles.fila}>
+            <Text style={styles.id}>{s.id}</Text>
+            <Text style={styles.estado}>Pendiente</Text>
+          </View>
+
+          <Text style={styles.empleado}>{s.empleadoNombre}</Text>
+          <Text style={styles.detalle}>Empresa: {s.empresa}</Text>
+          <Text style={styles.detalle}>Fecha: {formatearFecha(s.fecha)}</Text>
+          <Text style={styles.motivoTitulo}>Motivo</Text>
+          <Text style={styles.detalle}>{s.motivo}</Text>
+
+          <View style={styles.botones}>
+            <TouchableOpacity
+              style={styles.botonAprobar}
+              onPress={() => aprobarPermiso(s.id)}
+            >
+              <Text style={styles.textoBoton}>Aprobar</Text>
+            </TouchableOpacity>
+
+            {/* el rechazo se hace en el detalle porque pide motivo */}
+            <TouchableOpacity
+              style={styles.botonRechazar}
+              onPress={() =>
+                navigation.navigate("DetalleAprobacion", { id: s.id })
+              }
+            >
+              <Text style={styles.textoBoton}>Rechazar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ))}
     </ScrollView>
   );
 }
@@ -212,16 +259,17 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     paddingBottom: 32,
   },
-  titulo: {
-    fontSize: 23,
-    fontWeight: "bold",
-    color: theme.colors.text,
-    marginBottom: 6,
-  },
   subtitulo: {
     fontSize: 14,
     color: theme.colors.textSecondary,
-    marginBottom: 20,
+    marginBottom: 16,
+  },
+  seccion: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: theme.colors.text,
+    marginBottom: 10,
+    marginTop: 4,
   },
   tarjeta: {
     backgroundColor: theme.colors.card,
