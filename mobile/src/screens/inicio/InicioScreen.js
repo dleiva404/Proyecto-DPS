@@ -1,15 +1,34 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View, ScrollView, StatusBar } from "react-native";
+
+import React, { useCallback, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  StatusBar,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+
 import CustomButton from "../../components/CustomButton";
 import CustomCard from "../../components/CustomCard";
 import CustomHeader from "../../components/CustomHeader";
 import { useAuth } from "../../context/AuthContext";
 import NotificacionesScreen from "./NotificacionesScreen";
 
+import {
+  obtenerSaldoDisponible,
+  listarVacacionesPendientesPorRol,
+} from "../../services/solicitudesVacacionesService";
+
+const ROLES_APROBADORES = ["jefe", "analista", "gerente"];
+
 export default function InicioScreen({ route, navigation }) {
   const { usuario, logout } = useAuth();
+
   const [verNotificaciones, setVerNotificaciones] = useState(false);
+  const [saldoVacaciones, setSaldoVacaciones] = useState(15);
+  const [pendientes, setPendientes] = useState(0);
 
   const userRole = (
     usuario?.rol ||
@@ -20,12 +39,43 @@ export default function InicioScreen({ route, navigation }) {
 
   const userName = usuario?.nombre || usuario?.correo || "Colaborador";
 
+  const rolServicio = userRole.toUpperCase();
+
+  const actualizarResumen = useCallback(() => {
+    if (usuario?.id) {
+      setSaldoVacaciones(obtenerSaldoDisponible(usuario));
+    } else {
+      setSaldoVacaciones(0);
+    }
+
+    if (ROLES_APROBADORES.includes(userRole)) {
+      setPendientes(
+        listarVacacionesPendientesPorRol(rolServicio).length,
+      );
+    } else {
+      setPendientes(0);
+    }
+  }, [usuario, userRole, rolServicio]);
+
+  useFocusEffect(
+    useCallback(() => {
+      actualizarResumen();
+    }, [actualizarResumen]),
+  );
+
   if (verNotificaciones) {
-    return <NotificacionesScreen onBack={() => setVerNotificaciones(false)} />;
+    return (
+      <NotificacionesScreen
+        onBack={() => setVerNotificaciones(false)}
+      />
+    );
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       <CustomHeader
@@ -38,21 +88,28 @@ export default function InicioScreen({ route, navigation }) {
         unreadCount={2}
       />
 
-      {/* Resumen */}
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
-          <Ionicons name="calendar-outline" size={22} color="#2563EB" />
-          <Text style={styles.statNumber}>15</Text>
+          <Ionicons
+            name="calendar-outline"
+            size={22}
+            color="#2563EB"
+          />
+          <Text style={styles.statNumber}>{saldoVacaciones}</Text>
           <Text style={styles.statLabel}>Días Vacaciones</Text>
         </View>
+
         <View style={styles.statBox}>
-          <Ionicons name="document-text-outline" size={22} color="#10B981" />
+          <Ionicons
+            name="document-text-outline"
+            size={22}
+            color="#10B981"
+          />
           <Text style={styles.statNumber}>Activa</Text>
           <Text style={styles.statLabel}>Constancia Salarial</Text>
         </View>
       </View>
 
-      {/* Opciones por rol */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Panel de Control</Text>
 
@@ -73,12 +130,14 @@ export default function InicioScreen({ route, navigation }) {
           </CustomCard>
         )}
 
-        {(userRole === "jefe" ||
-          userRole === "analista" ||
-          userRole === "gerente") && (
+        {ROLES_APROBADORES.includes(userRole) && pendientes > 0 && (
           <CustomCard
             title="Aprobaciones Pendientes"
-            description="Tienes solicitudes recientes de tu personal a la espera de revisión."
+            description={
+              pendientes === 1
+                ? "Tienes 1 solicitud de vacaciones pendiente de revisión."
+                : `Tienes ${pendientes} solicitudes de vacaciones pendientes de revisión.`
+            }
             icon="time-outline"
             iconColor="#D97706"
             iconBg="#FEF3C7"
@@ -90,6 +149,17 @@ export default function InicioScreen({ route, navigation }) {
               onPress={() => navigation?.navigate?.("Bandeja")}
             />
           </CustomCard>
+        )}
+
+        {ROLES_APROBADORES.includes(userRole) && pendientes === 0 && (
+          <CustomCard
+            title="Todo al día"
+            description="No tienes solicitudes de vacaciones pendientes de revisar."
+            icon="checkmark-circle-outline"
+            iconColor="#059669"
+            iconBg="#D1FAE5"
+            accentColor="#10B981"
+          />
         )}
 
         {userRole === "rrhh" && (
