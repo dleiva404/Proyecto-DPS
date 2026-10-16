@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   View,
@@ -10,11 +9,15 @@ import {
   StyleSheet,
 } from "react-native";
 
-export default function AutorizarConstanciaScreen({
-  route,
-  onResolver,
-}) {
-  const solicitud = route?.params?.solicitud;
+import { useAuth } from "../../context/AuthContext";
+import {
+  obtenerConstancia,
+  resolverConstancia,
+} from "../../services/constanciasService";
+
+export default function AutorizarConstanciaScreen({ route, navigation }) {
+  const { usuario } = useAuth();
+  const solicitud = obtenerConstancia(route?.params?.id);
 
   const [observacion, setObservacion] = useState("");
   const [procesando, setProcesando] = useState(false);
@@ -25,7 +28,7 @@ export default function AutorizarConstanciaScreen({
     if (solicitud.estado !== "Pendiente") {
       Alert.alert(
         "Solicitud procesada",
-        "Esta solicitud ya tiene una decisión."
+        "Esta solicitud ya tiene una decisión.",
       );
       return;
     }
@@ -33,15 +36,7 @@ export default function AutorizarConstanciaScreen({
     if (decision === "Rechazada" && !observacion.trim()) {
       Alert.alert(
         "Observación obligatoria",
-        "Explicá por qué se rechaza la constancia."
-      );
-      return;
-    }
-
-    if (typeof onResolver !== "function") {
-      Alert.alert(
-        "Servicio no disponible",
-        "La conexión con el sistema de aprobaciones está pendiente."
+        "Explicá por qué se rechaza la constancia.",
       );
       return;
     }
@@ -49,21 +44,23 @@ export default function AutorizarConstanciaScreen({
     try {
       setProcesando(true);
 
-      await onResolver({
-        solicitud,
+      const resultado = resolverConstancia(
+        usuario,
+        solicitud.id,
         decision,
-        observacion: observacion.trim(),
-      });
+        observacion,
+      );
+      if (!resultado.ok) throw new Error(resultado.error);
 
       Alert.alert(
         "Solicitud procesada",
-        `La solicitud fue ${decision.toLowerCase()} correctamente.`
+        `La solicitud fue ${decision.toLowerCase()} correctamente.`,
       );
+      navigation.goBack();
     } catch (error) {
       Alert.alert(
         "No se pudo procesar",
-        error?.message ||
-          "Ocurrió un problema al procesar la solicitud."
+        error?.message || "Ocurrió un problema al procesar la solicitud.",
       );
     } finally {
       setProcesando(false);
@@ -73,12 +70,8 @@ export default function AutorizarConstanciaScreen({
   if (!solicitud) {
     return (
       <View style={styles.contenedorVacio}>
-        <Text style={styles.titulo}>
-          Autorizar constancia
-        </Text>
-        <Text style={styles.aviso}>
-          No hay una solicitud seleccionada.
-        </Text>
+        <Text style={styles.titulo}>Autorizar constancia</Text>
+        <Text style={styles.aviso}>No hay una solicitud seleccionada.</Text>
       </View>
     );
   }
@@ -90,9 +83,7 @@ export default function AutorizarConstanciaScreen({
       contentContainerStyle={styles.contenedor}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.titulo}>
-        Autorizar constancia
-      </Text>
+      <Text style={styles.titulo}>Autorizar constancia</Text>
 
       <Text style={styles.descripcion}>
         Revisión de solicitudes por Recursos Humanos.
@@ -100,44 +91,32 @@ export default function AutorizarConstanciaScreen({
 
       <View style={styles.tarjeta}>
         <Text style={styles.etiqueta}>Código</Text>
-        <Text style={styles.valor}>
-          {solicitud.codigo || "No disponible"}
-        </Text>
+        <Text style={styles.valor}>{solicitud.codigo || solicitud.id}</Text>
 
         <Text style={styles.etiqueta}>Empleado</Text>
         <Text style={styles.valor}>
           {solicitud.empleado || "No disponible"}
         </Text>
 
-        <Text style={styles.etiqueta}>
-          Tipo de constancia
-        </Text>
-        <Text style={styles.valor}>
-          {solicitud.tipo || "No disponible"}
-        </Text>
+        <Text style={styles.etiqueta}>Tipo de constancia</Text>
+        <Text style={styles.valor}>{solicitud.tipo || "No disponible"}</Text>
 
         <Text style={styles.etiqueta}>Motivo</Text>
-        <Text style={styles.valor}>
-          {solicitud.motivo || "No disponible"}
-        </Text>
+        <Text style={styles.valor}>{solicitud.motivo || "No disponible"}</Text>
 
         <Text style={styles.etiqueta}>Estado</Text>
         <Text
           style={[
             styles.estado,
-            solicitud.estado === "Aprobada" &&
-              styles.aprobada,
-            solicitud.estado === "Rechazada" &&
-              styles.rechazada,
+            solicitud.estado === "Aprobada" && styles.aprobada,
+            solicitud.estado === "Rechazada" && styles.rechazada,
           ]}
         >
           {solicitud.estado || "No disponible"}
         </Text>
       </View>
 
-      <Text style={styles.etiqueta}>
-        Observación de RRHH
-      </Text>
+      <Text style={styles.etiqueta}>Observación de RRHH</Text>
 
       <TextInput
         style={styles.campo}
@@ -145,11 +124,7 @@ export default function AutorizarConstanciaScreen({
         placeholderTextColor="#94a3b8"
         multiline
         textAlignVertical="top"
-        value={
-          pendiente
-            ? observacion
-            : solicitud.observacion || ""
-        }
+        value={pendiente ? observacion : solicitud.observacion || ""}
         onChangeText={setObservacion}
         editable={pendiente && !procesando}
         maxLength={300}
@@ -180,9 +155,7 @@ export default function AutorizarConstanciaScreen({
             onPress={() => resolverSolicitud("Rechazada")}
             disabled={procesando}
           >
-            <Text style={styles.textoBoton}>
-              Rechazar
-            </Text>
+            <Text style={styles.textoBoton}>Rechazar</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -284,4 +257,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-

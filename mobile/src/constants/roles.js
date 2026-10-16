@@ -6,11 +6,11 @@ export const ROLES = {
   RRHH: "RRHH",
 };
 
-// RRHH (asistente de planilla) consulta y registra, pero no aprueba: sale de esta lista.
 export const APROBADORES = [
   ROLES.JEFE,
   ROLES.ANALISTA,
   ROLES.GERENTE,
+  ROLES.RRHH,
 ];
 
 export const VEN_REPORTES = [ROLES.GERENTE, ROLES.RRHH];

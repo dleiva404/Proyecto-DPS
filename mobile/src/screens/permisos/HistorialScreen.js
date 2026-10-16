@@ -14,6 +14,7 @@ import { VISUAL_ESTADO } from "../../constants/estados";
 import { formatearFecha } from "../../services/formato";
 import { listarPropias } from "../../services/solicitudesService";
 import { listarVacacionesEmpleado } from "../../services/solicitudesVacacionesService";
+import { listarConstanciasPropias } from "../../services/constanciasService";
 
 const FILTROS = [
   { clave: "todas", texto: "Todas" },
@@ -41,7 +42,18 @@ function armarLista(usuario) {
     creadaEn: s.creadaEn,
   }));
 
-  return [...permisos, ...vacaciones].sort((a, b) =>
+  const constancias = listarConstanciasPropias(usuario).map((s) => ({
+    id: s.id,
+    tipo: "constancia",
+    titulo: s.tipo.includes("salarial")
+      ? "Constancia salarial"
+      : "Constancia laboral",
+    detalle: `Dirigida a: ${s.destinatario}`,
+    estado: s.estado,
+    creadaEn: s.creadaEn,
+  }));
+
+  return [...permisos, ...vacaciones, ...constancias].sort((a, b) =>
     b.creadaEn.localeCompare(a.creadaEn),
   );
 }
@@ -63,6 +75,10 @@ export default function HistorialScreen({ navigation }) {
   const abrir = (s) => {
     if (s.tipo === "permiso") {
       navigation.navigate("EstadoSolicitud", { id: s.id });
+    } else if (s.tipo === "constancia") {
+      navigation.navigate("VerConstancia", { id: s.id });
+    } else {
+      navigation.navigate("DetalleVacaciones", { id: s.id });
     }
   };
 
@@ -84,6 +100,13 @@ export default function HistorialScreen({ navigation }) {
           style={styles.boton}
         />
       </View>
+
+      <CustomButton
+        title="Solicitar constancia"
+        type="secondary"
+        onPress={() => navigation.navigate("SolicitarConstancia")}
+        style={styles.botonConstancia}
+      />
 
       <View style={styles.filtros}>
         {FILTROS.map((f) => {
@@ -119,7 +142,7 @@ export default function HistorialScreen({ navigation }) {
               key={s.id}
               style={styles.tarjeta}
               onPress={() => abrir(s)}
-              activeOpacity={s.tipo === "permiso" ? 0.8 : 1}
+              activeOpacity={0.8}
             >
               <View style={styles.filaTitulo}>
                 <Text style={styles.titulo}>{s.titulo}</Text>
@@ -152,10 +175,13 @@ const styles = StyleSheet.create({
   acciones: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   boton: {
     flex: 1,
+  },
+  botonConstancia: {
+    marginBottom: 16,
   },
   filtros: {
     flexDirection: "row",

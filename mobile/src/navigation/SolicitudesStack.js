@@ -5,7 +5,7 @@ import SolicitarPermisoScreen from "../screens/permisos/SolicitarPermisoScreen";
 import EstadoSolicitudScreen from "../screens/permisos/EstadoSolicitudScreen";
 
 import SolicitarVacacionesScreen from "../screens/vacaciones/SolicitarVacacionesScreen";
-
+import DetalleVacacionesScreen from "../screens/vacaciones/DetalleVacacionesScreen";
 import SolicitarConstanciaScreen from "../screens/constancias/SolicitarConstanciaScreen";
 import VerConstanciaScreen from "../screens/constancias/VerConstanciaScreen";
 
@@ -34,6 +34,12 @@ export default function SolicitudesStack() {
         component={SolicitarVacacionesScreen}
         options={{ title: "Solicitar vacaciones" }}
       />
+      <Stack.Screen
+        name="DetalleVacaciones"
+        component={DetalleVacacionesScreen}
+        options={{ title: "Detalle de vacaciones" }}
+      />
+
       <Stack.Screen
         name="SolicitarConstancia"
         component={SolicitarConstanciaScreen}

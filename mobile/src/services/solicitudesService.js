@@ -4,7 +4,10 @@ import { ESTADOS, ETAPAS } from "../constants/estados";
 
 // Almacén en memoria: se pierde al recargar. Cuando se conecte Firestore,
 // estas funciones cambian de implementación pero no de nombre.
-let almacen = solicitudesSeed.map((s) => ({ ...s, historial: [...s.historial] }));
+let almacen = solicitudesSeed.map((s) => ({
+  ...s,
+  historial: [...s.historial],
+}));
 let contador = almacen.length;
 
 const copia = (s) => ({ ...s, historial: s.historial.map((h) => ({ ...h })) });
@@ -20,6 +23,8 @@ export function validarPermiso({ empresa, motivo, fecha }) {
   const formatoOk = /^\d{4}-\d{2}-\d{2}$/.test(fecha || "");
   if (!formatoOk || isNaN(new Date(`${fecha}T00:00:00`).getTime())) {
     errores.fecha = "Usa el formato AAAA-MM-DD";
+  } else if (new Date(`${fecha}T12:00:00`).getDay() === 0) {
+    errores.fecha = "El domingo no se trabaja, elige otro día";
   }
   return errores;
 }
@@ -52,10 +57,16 @@ export function crearPermiso(usuario, datos) {
 export function actualizarPermiso(usuario, id, datos) {
   const actual = almacen.find((s) => s.id === id);
   if (!actual || actual.empleadoUid !== usuario.id) {
-    return { ok: false, errores: { general: "No puedes modificar esta solicitud" } };
+    return {
+      ok: false,
+      errores: { general: "No puedes modificar esta solicitud" },
+    };
   }
   if (actual.estado !== ESTADOS.RECHAZADA) {
-    return { ok: false, errores: { general: "Solo se modifican las solicitudes rechazadas" } };
+    return {
+      ok: false,
+      errores: { general: "Solo se modifican las solicitudes rechazadas" },
+    };
   }
   const errores = validarPermiso(datos);
   if (Object.keys(errores).length) return { ok: false, errores };
@@ -90,32 +101,34 @@ export function equipoDe(jefe) {
   return usuariosMock.filter((u) => u.jefeId === jefe.id).map((u) => u.id);
 }
 
-// Solo las pendientes de su personal que están en la etapa del jefe
+// Nadie decide sobre su propia solicitud.
+function puedeDecidirPermiso(usuario, s) {
+  if (s.estado !== ESTADOS.PENDIENTE || s.empleadoUid === usuario.id)
+    return false;
+  if (s.etapaActual === ETAPAS.JEFE) {
+    return usuario.rol === "JEFE" && equipoDe(usuario).includes(s.empleadoUid);
+  }
+  if (s.etapaActual === ETAPAS.ANALISTA) {
+    return usuario.rol === "ANALISTA" || usuario.rol === "GERENTE";
+  }
+  return false;
+}
+
+// Pendientes que le tocan a este usuario según la etapa
 export function pendientesDeEquipo(jefe) {
-  if (jefe.rol !== "JEFE") return [];
-  const equipo = equipoDe(jefe);
   return almacen
-    .filter(
-      (s) =>
-        s.estado === ESTADOS.PENDIENTE &&
-        s.etapaActual === ETAPAS.JEFE &&
-        equipo.includes(s.empleadoUid),
-    )
+    .filter((s) => puedeDecidirPermiso(jefe, s))
     .map(copia)
     .sort((a, b) => a.fecha.localeCompare(b.fecha));
 }
 
-// Decide en la etapa del jefe. Devuelve { ok, error }.
 export function decidir(usuario, id, accion, motivo = "") {
   const actual = almacen.find((s) => s.id === id);
   if (!actual) return { ok: false, error: "La solicitud no existe" };
   if (actual.estado !== ESTADOS.PENDIENTE) {
     return { ok: false, error: "Esta solicitud ya no está pendiente" };
   }
-  const puedeDecidir =
-    usuario.rol === "JEFE" &&
-    actual.etapaActual === ETAPAS.JEFE &&
-    equipoDe(usuario).includes(actual.empleadoUid);
+  const puedeDecidir = puedeDecidirPermiso(usuario, actual);
   if (!puedeDecidir) {
     return { ok: false, error: "No puedes decidir sobre esta solicitud" };
   }
@@ -137,7 +150,9 @@ export function decidir(usuario, id, accion, motivo = "") {
         etapaActual: null,
         motivoRechazo: motivo.trim(),
       }
-    : { etapaActual: ETAPAS.ANALISTA };
+    : actual.etapaActual === ETAPAS.JEFE
+      ? { etapaActual: ETAPAS.ANALISTA }
+      : { estado: ESTADOS.APROBADA, etapaActual: null };
 
   almacen = almacen.map((s) =>
     s.id === id

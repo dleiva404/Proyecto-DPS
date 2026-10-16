@@ -15,6 +15,7 @@ export const usuariosMock = [
     departamento: "Contabilidad",
     jefeId: "u2",
     fechaIngreso: "2022-03-15",
+    salario: 850,
     fotoUrl: null,
   },
   {
@@ -30,6 +31,7 @@ export const usuariosMock = [
     departamento: "Contabilidad",
     jefeId: null,
     fechaIngreso: "2018-07-01",
+    salario: 1400,
     fotoUrl: null,
   },
   {
@@ -45,6 +47,7 @@ export const usuariosMock = [
     departamento: "RRHH",
     jefeId: null,
     fechaIngreso: "2020-01-10",
+    salario: 1100,
     fotoUrl: null,
   },
   {
@@ -60,6 +63,7 @@ export const usuariosMock = [
     departamento: "Administración",
     jefeId: null,
     fechaIngreso: "2015-05-20",
+    salario: 2500,
     fotoUrl: null,
   },
   {
@@ -75,6 +79,7 @@ export const usuariosMock = [
     departamento: "RRHH",
     jefeId: null,
     fechaIngreso: "2019-09-02",
+    salario: 1200,
     fotoUrl: null,
   },
   {
@@ -91,6 +96,7 @@ export const usuariosMock = [
     departamento: "Compras",
     jefeId: "u2",
     fechaIngreso: "2021-05-10",
+    salario: 750,
     fotoUrl: null,
   },
 ];

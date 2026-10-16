@@ -10,9 +10,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
 import CabeceraFigma from "../../components/CabeceraFigma";
 import CampoTexto from "../../components/CampoTexto";
+import CampoFecha from "../../components/CampoFecha";
 import CustomButton from "../../components/CustomButton";
 import { EMPRESAS } from "../../constants/empresas";
-import { actualizarPermiso, crearPermiso } from "../../services/solicitudesService";
+import {
+  actualizarPermiso,
+  crearPermiso,
+} from "../../services/solicitudesService";
 
 // Pantalla "Solicitud de permiso" (Figma 1).
 // Si llega una solicitud en params, es "Modificar" de una rechazada.
@@ -73,7 +77,9 @@ export default function SolicitarPermisoScreen({ navigation, route }) {
           );
         })}
       </View>
-      {errores.empresa ? <Text style={styles.error}>{errores.empresa}</Text> : null}
+      {errores.empresa ? (
+        <Text style={styles.error}>{errores.empresa}</Text>
+      ) : null}
 
       <CampoTexto
         label="Nombre del Depto."
@@ -93,16 +99,17 @@ export default function SolicitarPermisoScreen({ navigation, route }) {
         multilinea
         error={errores.motivo}
       />
-      <CampoTexto
+      <CampoFecha
         label="Fecha del permiso"
-        placeholder="AAAA-MM-DD"
         value={fecha}
-        onChangeText={setFecha}
-        keyboardType="numbers-and-punctuation"
+        onChange={setFecha}
         error={errores.fecha}
+        minimumDate={new Date()}
       />
 
-      {errores.general ? <Text style={styles.error}>{errores.general}</Text> : null}
+      {errores.general ? (
+        <Text style={styles.error}>{errores.general}</Text>
+      ) : null}
 
       <CustomButton
         title="Enviar solicitud"

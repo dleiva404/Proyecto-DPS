@@ -16,6 +16,7 @@ export const ETAPAS = {
 export const ETAPA_TEXTO = {
   JEFE: "Jefe inmediato",
   ANALISTA: "Analista de Nómina",
+  GERENTE: "Gerente (suplente)",
 };
 
 // Texto, badge y color de cada estado, según la captura de Figma

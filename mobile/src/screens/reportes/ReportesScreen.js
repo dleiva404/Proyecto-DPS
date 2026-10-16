@@ -1,20 +1,23 @@
+import React, { useCallback, useState } from "react";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { reporteVacacionesPorDepartamento } from "../../services/solicitudesVacacionesService";
 
-import React from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-} from "react-native";
+export default function ReportesScreen() {
+  const [datos, setDatos] = useState([]);
 
-export default function ReportesScreen({ datos = [] }) {
+  useFocusEffect(
+    useCallback(() => {
+      setDatos(reporteVacacionesPorDepartamento());
+    }, []),
+  );
   const departamentos = Array.isArray(datos)
     ? datos
         .filter(
           (item) =>
             item &&
             typeof item.departamento === "string" &&
-            item.departamento.trim() !== ""
+            item.departamento.trim() !== "",
         )
         .map((item) => ({
           departamento: item.departamento.trim(),
@@ -22,34 +25,22 @@ export default function ReportesScreen({ datos = [] }) {
         }))
     : [];
 
-  const totalDias = departamentos.reduce(
-    (suma, item) => suma + item.dias,
-    0
-  );
+  const totalDias = departamentos.reduce((suma, item) => suma + item.dias, 0);
 
-  const maximo = Math.max(
-    1,
-    ...departamentos.map((item) => item.dias)
-  );
+  const maximo = Math.max(1, ...departamentos.map((item) => item.dias));
 
   return (
     <ScrollView contentContainerStyle={styles.contenedor}>
-      <Text style={styles.titulo}>
-        Reportes de vacaciones
-      </Text>
+      <Text style={styles.titulo}>Reportes de vacaciones</Text>
 
       <Text style={styles.descripcion}>
         Resumen de días de vacaciones por departamento.
       </Text>
 
       <View style={styles.resumen}>
-        <Text style={styles.resumenEtiqueta}>
-          Total de días registrados
-        </Text>
+        <Text style={styles.resumenEtiqueta}>Total de días registrados</Text>
 
-        <Text style={styles.resumenNumero}>
-          {totalDias}
-        </Text>
+        <Text style={styles.resumenNumero}>{totalDias}</Text>
       </View>
 
       <View style={styles.tarjeta}>
@@ -63,18 +54,11 @@ export default function ReportesScreen({ datos = [] }) {
           </Text>
         ) : (
           departamentos.map((item, index) => (
-            <View
-              key={`${item.departamento}-${index}`}
-              style={styles.fila}
-            >
+            <View key={`${item.departamento}-${index}`} style={styles.fila}>
               <View style={styles.encabezadoFila}>
-                <Text style={styles.departamento}>
-                  {item.departamento}
-                </Text>
+                <Text style={styles.departamento}>{item.departamento}</Text>
 
-                <Text style={styles.cantidad}>
-                  {item.dias} días
-                </Text>
+                <Text style={styles.cantidad}>{item.dias} días</Text>
               </View>
 
               <View style={styles.barraFondo}>
@@ -82,9 +66,7 @@ export default function ReportesScreen({ datos = [] }) {
                   style={[
                     styles.barra,
                     {
-                      width: `${
-                        (item.dias / maximo) * 100
-                      }%`,
+                      width: `${(item.dias / maximo) * 100}%`,
                     },
                   ]}
                 />
@@ -180,4 +162,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-

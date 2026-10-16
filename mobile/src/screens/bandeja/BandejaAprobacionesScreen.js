@@ -20,17 +20,20 @@ import {
   pendientesDeEquipo,
   decidir as decidirPermiso,
 } from "../../services/solicitudesService";
+import { listarConstanciasPendientes } from "../../services/constanciasService";
 
 const ETIQUETAS = {
   ANALISTA: "Analista de Nómina",
   GERENTE: "Gerente",
   JEFE: "Jefe inmediato",
+  RRHH: "Recursos Humanos",
 };
 
 export default function BandejaAprobacionesScreen({ navigation }) {
   const { usuario } = useAuth();
   const [vacaciones, setVacaciones] = useState([]);
   const [permisos, setPermisos] = useState([]);
+  const [constancias, setConstancias] = useState([]);
   const [rechazoId, setRechazoId] = useState(null);
   const [motivoRechazo, setMotivoRechazo] = useState("");
 
@@ -43,6 +46,7 @@ export default function BandejaAprobacionesScreen({ navigation }) {
       setVacaciones([]);
     }
     setPermisos(usuario ? pendientesDeEquipo(usuario) : []);
+    setConstancias(rol === "RRHH" ? listarConstanciasPendientes() : []);
   }, [rol, usuario]);
 
   useFocusEffect(
@@ -110,11 +114,16 @@ export default function BandejaAprobacionesScreen({ navigation }) {
     cargar();
     Alert.alert(
       "Permiso aprobado",
-      "Pasa a revisión de la Analista de Nómina.",
+      rol === "JEFE"
+        ? "Pasa a revisión de la Analista de Nómina."
+        : "El permiso quedó aprobado.",
     );
   };
 
-  const sinPendientes = vacaciones.length === 0 && permisos.length === 0;
+  const sinPendientes =
+    vacaciones.length === 0 &&
+    permisos.length === 0 &&
+    constancias.length === 0;
 
   return (
     <ScrollView
@@ -242,6 +251,40 @@ export default function BandejaAprobacionesScreen({ navigation }) {
               }
             >
               <Text style={styles.textoBoton}>Rechazar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ))}
+
+      {constancias.length > 0 && (
+        <Text style={styles.seccion}>Constancias ({constancias.length})</Text>
+      )}
+
+      {constancias.map((c) => (
+        <View key={c.id} style={styles.tarjeta}>
+          <View style={styles.fila}>
+            <Text style={styles.id}>{c.id}</Text>
+            <Text style={styles.estado}>Pendiente</Text>
+          </View>
+
+          <Text style={styles.empleado}>{c.empleado}</Text>
+          <Text style={styles.detalle}>
+            {c.tipo === "salarial"
+              ? "Constancia salarial"
+              : "Constancia laboral"}
+          </Text>
+          <Text style={styles.detalle}>Dirigida a: {c.destinatario}</Text>
+          <Text style={styles.motivoTitulo}>Motivo</Text>
+          <Text style={styles.detalle}>{c.motivo}</Text>
+
+          <View style={styles.botones}>
+            <TouchableOpacity
+              style={styles.botonAprobar}
+              onPress={() =>
+                navigation.navigate("AutorizarConstancia", { id: c.id })
+              }
+            >
+              <Text style={styles.textoBoton}>Revisar y autorizar</Text>
             </TouchableOpacity>
           </View>
         </View>
