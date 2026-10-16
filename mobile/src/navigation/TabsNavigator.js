@@ -5,7 +5,7 @@ import { APROBADORES, VEN_REPORTES } from "../constants/roles";
 
 import InicioScreen from "../screens/inicio/InicioScreen";
 import SolicitudesStack from "./SolicitudesStack";
-import BandejaAprobacionesScreen from "../screens/bandeja/BandejaAprobacionesScreen";
+import BandejaStack from "./BandejaStack";
 import ReportesScreen from "../screens/reportes/ReportesScreen";
 import PerfilScreen from "../screens/perfil/PerfilScreen";
 
@@ -48,7 +48,11 @@ export default function TabsNavigator() {
         options={{ headerShown: false }}
       />
       {esAprobador && (
-        <Tab.Screen name="Bandeja" component={BandejaAprobacionesScreen} />
+        <Tab.Screen
+          name="Bandeja"
+          component={BandejaStack}
+          options={{ headerShown: false }}
+        />
       )}
       {veReportes && <Tab.Screen name="Reportes" component={ReportesScreen} />}
       <Tab.Screen
