@@ -36,7 +36,7 @@ export default function DetalleVacacionesScreen({ route }) {
   const visual = VISUAL_ESTADO[solicitud.estado];
 
   // estado de cada etapa segun el historial
-  const etapas = ETAPAS.map((etapa) => {
+  const etapas = (solicitud.etapas || ETAPAS).map((etapa) => {
     const registro = solicitud.historial.find((h) => h.rol === etapa);
     let texto = "En espera";
     let color = theme.colors.border;

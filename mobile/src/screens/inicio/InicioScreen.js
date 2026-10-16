@@ -1,12 +1,5 @@
-
 import React, { useCallback, useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  StatusBar,
-} from "react-native";
+import { StyleSheet, Text, View, ScrollView, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 
@@ -49,9 +42,7 @@ export default function InicioScreen({ route, navigation }) {
     }
 
     if (ROLES_APROBADORES.includes(userRole)) {
-      setPendientes(
-        listarVacacionesPendientesPorRol(rolServicio).length,
-      );
+      setPendientes(listarVacacionesPendientesPorRol(usuario).length);
     } else {
       setPendientes(0);
     }
@@ -64,18 +55,11 @@ export default function InicioScreen({ route, navigation }) {
   );
 
   if (verNotificaciones) {
-    return (
-      <NotificacionesScreen
-        onBack={() => setVerNotificaciones(false)}
-      />
-    );
+    return <NotificacionesScreen onBack={() => setVerNotificaciones(false)} />;
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       <CustomHeader
@@ -90,21 +74,13 @@ export default function InicioScreen({ route, navigation }) {
 
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
-          <Ionicons
-            name="calendar-outline"
-            size={22}
-            color="#2563EB"
-          />
+          <Ionicons name="calendar-outline" size={22} color="#2563EB" />
           <Text style={styles.statNumber}>{saldoVacaciones}</Text>
           <Text style={styles.statLabel}>Días Vacaciones</Text>
         </View>
 
         <View style={styles.statBox}>
-          <Ionicons
-            name="document-text-outline"
-            size={22}
-            color="#10B981"
-          />
+          <Ionicons name="document-text-outline" size={22} color="#10B981" />
           <Text style={styles.statNumber}>Activa</Text>
           <Text style={styles.statLabel}>Constancia Salarial</Text>
         </View>

@@ -1,6 +1,7 @@
 import { usuariosMock } from "./usuariosMock";
 import { solicitudesSeed } from "./solicitudesMock";
 import { ESTADOS, ETAPAS } from "../constants/estados";
+import { listarVacacionesEmpleado } from "./solicitudesVacacionesService";
 
 // Almacén en memoria: se pierde al recargar. Cuando se conecte Firestore,
 // estas funciones cambian de implementación pero no de nombre.
@@ -16,6 +17,31 @@ const copia = (s) => ({ ...s, historial: s.historial.map((h) => ({ ...h })) });
 export const etapaInicialPara = (usuario) =>
   usuario.jefeId ? ETAPAS.JEFE : ETAPAS.ANALISTA;
 
+function hoyTexto() {
+  const hoy = new Date();
+  const mes = String(hoy.getMonth() + 1).padStart(2, "0");
+  const dia = String(hoy.getDate()).padStart(2, "0");
+  return `${hoy.getFullYear()}-${mes}-${dia}`;
+}
+
+function choquePermiso(usuario, fecha, idActual = null) {
+  const otroPermiso = almacen.some(
+    (s) =>
+      s.empleadoUid === usuario.id &&
+      s.id !== idActual &&
+      s.estado !== ESTADOS.RECHAZADA &&
+      s.fecha === fecha,
+  );
+  if (otroPermiso) return "Ya tienes un permiso para ese día";
+
+  const enVacaciones = listarVacacionesEmpleado(usuario.id).some(
+    (v) =>
+      v.estado !== "Rechazada" && v.fechaInicio <= fecha && fecha <= v.fechaFin,
+  );
+  if (enVacaciones) return "Ese día ya está en una solicitud de vacaciones";
+
+  return null;
+}
 export function validarPermiso({ empresa, motivo, fecha }) {
   const errores = {};
   if (!empresa) errores.empresa = "Elige una empresa";
@@ -25,6 +51,8 @@ export function validarPermiso({ empresa, motivo, fecha }) {
     errores.fecha = "Usa el formato AAAA-MM-DD";
   } else if (new Date(`${fecha}T12:00:00`).getDay() === 0) {
     errores.fecha = "El domingo no se trabaja, elige otro día";
+  } else if (fecha < hoyTexto()) {
+    errores.fecha = "No puedes pedir permiso para un día que ya pasó";
   }
   return errores;
 }
@@ -32,7 +60,8 @@ export function validarPermiso({ empresa, motivo, fecha }) {
 export function crearPermiso(usuario, datos) {
   const errores = validarPermiso(datos);
   if (Object.keys(errores).length) return { ok: false, errores };
-
+  const choque = choquePermiso(usuario, datos.fecha);
+  if (choque) return { ok: false, errores: { fecha: choque } };
   contador += 1;
   const nueva = {
     id: `SOL-${String(contador).padStart(3, "0")}`,
@@ -71,6 +100,8 @@ export function actualizarPermiso(usuario, id, datos) {
   const errores = validarPermiso(datos);
   if (Object.keys(errores).length) return { ok: false, errores };
 
+  const choque = choquePermiso(usuario, datos.fecha, id);
+  if (choque) return { ok: false, errores: { fecha: choque } };
   const cambios = {
     empresa: datos.empresa,
     departamento: datos.departamento || actual.departamento,

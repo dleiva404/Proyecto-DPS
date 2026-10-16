@@ -41,7 +41,7 @@ export default function BandejaAprobacionesScreen({ navigation }) {
 
   const cargar = useCallback(() => {
     if (["ANALISTA", "GERENTE", "JEFE"].includes(rol)) {
-      setVacaciones(listarVacacionesPendientesPorRol(rol));
+      setVacaciones(listarVacacionesPendientesPorRol(usuario));
     } else {
       setVacaciones([]);
     }
@@ -76,7 +76,7 @@ export default function BandejaAprobacionesScreen({ navigation }) {
           onPress: () => {
             const resultado = decidirSolicitudVacaciones(
               solicitud.id,
-              rol,
+              usuario,
               decision,
               decision === "Rechazar" ? motivoRechazo : "",
             );

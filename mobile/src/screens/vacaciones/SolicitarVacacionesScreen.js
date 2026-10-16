@@ -18,6 +18,7 @@ import {
 import {
   crearSolicitudVacaciones,
   obtenerSaldoDisponible,
+  obtenerResumenSaldo,
 } from "../../services/solicitudesVacacionesService";
 
 export default function SolicitarVacacionesScreen({ navigation }) {
@@ -29,7 +30,7 @@ export default function SolicitarVacacionesScreen({ navigation }) {
 
   const dias = contarDiasHabiles(fechaInicio, fechaFin);
   const saldo = obtenerSaldoDisponible(usuario);
-
+  const resumen = obtenerResumenSaldo(usuario);
   const errores = validarSolicitudVacaciones({
     fechaInicio,
     fechaFin,
@@ -102,10 +103,14 @@ export default function SolicitarVacacionesScreen({ navigation }) {
 
         <View style={styles.balance}>
           <Text style={styles.balanceLabel}>Saldo disponible</Text>
-          <Text style={styles.balanceNumber}>{saldo} días</Text>
+          <Text style={styles.balanceNumber}>{resumen.disponible} días</Text>
           <Text style={styles.helper}>
-            Tienes 15 días hábiles por período anual. Las solicitudes pendientes
-            reservan días y las rechazadas los liberan.
+            Tomados: {resumen.aprobados} · En trámite: {resumen.enTramite} ·
+            Total del período: {resumen.total}
+          </Text>
+          <Text style={styles.helper}>
+            Los días en trámite quedan apartados mientras se revisan; si la
+            solicitud se rechaza, se liberan.
           </Text>
         </View>
       </View>
