@@ -31,7 +31,7 @@ export default function SolicitarConstanciaScreen({ navigation }) {
     const motivoLimpio = motivo.trim();
 
     if (!destinatarioLimpio || !motivoLimpio) {
-      Alert.alert("Campos obligatorios", "Completá todos los campos.");
+      Alert.alert("Campos obligatorios", "Completa todos los campos.");
       return;
     }
 
@@ -71,10 +71,8 @@ export default function SolicitarConstanciaScreen({ navigation }) {
       contentContainerStyle={styles.contenedor}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.titulo}>Solicitar constancia</Text>
-
       <Text style={styles.descripcion}>
-        Completá la información para solicitar una constancia a Recursos
+        Completa la información para solicitar una constancia a Recursos
         Humanos.
       </Text>
 
@@ -123,7 +121,7 @@ export default function SolicitarConstanciaScreen({ navigation }) {
 
       <TextInput
         style={[styles.campo, styles.area]}
-        placeholder="Explicá para qué necesitás la constancia"
+        placeholder="Explica para qué necesitas la constancia"
         placeholderTextColor="#94a3b8"
         multiline
         textAlignVertical="top"
@@ -152,12 +150,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     backgroundColor: "#f8fafc",
-  },
-  titulo: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1e3a8a",
-    marginBottom: 10,
   },
   descripcion: {
     fontSize: 14,

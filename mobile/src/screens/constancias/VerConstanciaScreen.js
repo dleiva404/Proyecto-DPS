@@ -16,7 +16,6 @@ export default function VerConstanciaScreen({ route }) {
   if (!constancia) {
     return (
       <View style={styles.contenedorVacio}>
-        <Text style={styles.titulo}>Ver constancia</Text>
         <Text style={styles.aviso}>No hay una constancia seleccionada.</Text>
       </View>
     );
@@ -25,7 +24,6 @@ export default function VerConstanciaScreen({ route }) {
   if (constancia.estado !== "Aprobada") {
     return (
       <View style={styles.contenedorVacio}>
-        <Text style={styles.titulo}>Ver constancia</Text>
         <Text style={styles.aviso}>
           {constancia.estado === "Rechazada"
             ? `RRHH rechazó la solicitud: ${constancia.observacion}`
@@ -51,8 +49,6 @@ export default function VerConstanciaScreen({ route }) {
 
   return (
     <ScrollView contentContainerStyle={styles.contenedor}>
-      <Text style={styles.titulo}>Ver constancia</Text>
-
       <View style={styles.tarjeta}>
         <Text style={styles.empresa}>DIDELCO</Text>
 
@@ -108,12 +104,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
     padding: 20,
     justifyContent: "center",
-  },
-  titulo: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1e3a8a",
-    marginBottom: 20,
   },
   tarjeta: {
     backgroundColor: "#fff",

@@ -36,7 +36,7 @@ export default function AutorizarConstanciaScreen({ route, navigation }) {
     if (decision === "Rechazada" && !observacion.trim()) {
       Alert.alert(
         "Observación obligatoria",
-        "Explicá por qué se rechaza la constancia.",
+        "Explica por qué se rechaza la constancia.",
       );
       return;
     }
@@ -70,7 +70,6 @@ export default function AutorizarConstanciaScreen({ route, navigation }) {
   if (!solicitud) {
     return (
       <View style={styles.contenedorVacio}>
-        <Text style={styles.titulo}>Autorizar constancia</Text>
         <Text style={styles.aviso}>No hay una solicitud seleccionada.</Text>
       </View>
     );
@@ -83,8 +82,6 @@ export default function AutorizarConstanciaScreen({ route, navigation }) {
       contentContainerStyle={styles.contenedor}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.titulo}>Autorizar constancia</Text>
-
       <Text style={styles.descripcion}>
         Revisión de solicitudes por Recursos Humanos.
       </Text>
@@ -120,7 +117,7 @@ export default function AutorizarConstanciaScreen({ route, navigation }) {
 
       <TextInput
         style={styles.campo}
-        placeholder="Escribí una observación"
+        placeholder="Escribe una observación"
         placeholderTextColor="#94a3b8"
         multiline
         textAlignVertical="top"
@@ -174,12 +171,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
     padding: 20,
     justifyContent: "center",
-  },
-  titulo: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1e3a8a",
-    marginBottom: 8,
   },
   descripcion: {
     fontSize: 14,

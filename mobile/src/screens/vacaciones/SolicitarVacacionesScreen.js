@@ -86,7 +86,6 @@ export default function SolicitarVacacionesScreen({ navigation }) {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.title}>Solicitar vacaciones</Text>
       <Text style={styles.subtitle}>Completa los datos de tu solicitud.</Text>
 
       <View style={styles.card}>
@@ -146,7 +145,9 @@ export default function SolicitarVacacionesScreen({ navigation }) {
         <View style={styles.daysBox}>
           <Text style={styles.daysLabel}>Días hábiles solicitados</Text>
           <Text style={styles.daysNumber}>{dias}</Text>
-          <Text style={styles.helper}>Los domingos no se descuentan.</Text>
+          <Text style={styles.helper}>
+            Los domingos y feriados no se descuentan.
+          </Text>
         </View>
 
         <TouchableOpacity
@@ -178,12 +179,6 @@ const styles = StyleSheet.create({
   content: {
     padding: theme.spacing.md,
     paddingBottom: 32,
-  },
-  title: {
-    fontSize: 25,
-    fontWeight: "700",
-    color: theme.colors.text,
-    marginBottom: 6,
   },
   subtitle: {
     fontSize: 14,

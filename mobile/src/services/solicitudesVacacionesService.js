@@ -154,12 +154,6 @@ export function listarVacacionesEmpleado(empleadoUid) {
     .sort((a, b) => b.creadaEn.localeCompare(a.creadaEn));
 }
 
-export function listarVacacionesPendientes() {
-  return solicitudesVacaciones
-    .filter((s) => s.estado === "Pendiente")
-    .map(copiarSolicitud);
-}
-
 export function listarVacacionesPendientesPorRol(usuario) {
   return solicitudesVacaciones
     .filter((s) => puedeDecidirVacacion(usuario, s))

@@ -1,5 +1,59 @@
 const DIAS_ANUALES = 15;
 
+const FERIADOS_FIJOS = {
+  "01-01": "Año Nuevo",
+  "05-01": "Día del Trabajo",
+  "05-10": "Día de la Madre",
+  "06-17": "Día del Padre",
+  "08-06": "Fiestas Agostinas",
+  "09-15": "Día de la Independencia",
+  "11-02": "Día de los Difuntos",
+  "12-25": "Navidad",
+};
+
+function aTexto(fecha) {
+  const mes = String(fecha.getMonth() + 1).padStart(2, "0");
+  const dia = String(fecha.getDate()).padStart(2, "0");
+  return `${fecha.getFullYear()}-${mes}-${dia}`;
+}
+
+function domingoDePascua(anio) {
+  const a = anio % 19;
+  const b = Math.floor(anio / 100);
+  const c = anio % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const mes = Math.floor((h + l - 7 * m + 114) / 31);
+  const dia = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(anio, mes - 1, dia, 12);
+}
+
+export function nombreFeriado(fechaTexto) {
+  if (!fechaTexto) return null;
+  const fijo = FERIADOS_FIJOS[fechaTexto.slice(5, 10)];
+  if (fijo) return fijo;
+
+  const pascua = domingoDePascua(Number(fechaTexto.slice(0, 4)));
+  const santos = [
+    [-3, "Jueves Santo"],
+    [-2, "Viernes Santo"],
+    [-1, "Sábado Santo"],
+  ];
+  for (const [dias, nombre] of santos) {
+    const fecha = new Date(pascua);
+    fecha.setDate(pascua.getDate() + dias);
+    if (aTexto(fecha) === fechaTexto) return nombre;
+  }
+  return null;
+}
+
 function crearFechaAniversario(fechaIngreso, anio) {
   const [, month, day] = fechaIngreso.split("-").map(Number);
   const ultimoDia = new Date(anio, month, 0).getDate();
@@ -25,7 +79,7 @@ export function contarDiasHabiles(fechaInicio, fechaFin) {
     fecha.setDate(fecha.getDate() + 1)
   ) {
     const dia = fecha.getDay();
-    if (dia !== 0) dias++;
+    if (dia !== 0 && !nombreFeriado(aTexto(fecha))) dias++;
   }
 
   return dias;
@@ -107,6 +161,10 @@ export function validarSolicitudVacaciones({
     } else if (inicio.getDay() === 0 || fin.getDay() === 0) {
       errores.fechas =
         "Las vacaciones no pueden iniciar ni terminar en domingo.";
+    } else if (nombreFeriado(fechaInicio) || nombreFeriado(fechaFin)) {
+      errores.fechas = `Las vacaciones no pueden iniciar ni terminar en feriado (${
+        nombreFeriado(fechaInicio) || nombreFeriado(fechaFin)
+      }).`;
     } else {
       const periodo = obtenerPeriodoVacacional(fechaIngreso);
 

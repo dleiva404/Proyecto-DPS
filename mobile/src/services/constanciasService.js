@@ -23,6 +23,7 @@ export function crearConstancia(usuario, { tipo, destinatario, motivo }) {
     empleado: `${usuario.nombre} ${usuario.apellido}`,
     cargo: usuario.puesto,
     departamento: usuario.departamento,
+    empresa: usuario.empresa,
     fechaIngreso: usuario.fechaIngreso,
     salario: usuario.salario ?? null,
     tipo,

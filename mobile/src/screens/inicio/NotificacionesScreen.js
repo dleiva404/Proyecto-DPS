@@ -11,113 +11,10 @@ import CustomCard from "../../components/CustomCard";
 import StatusBadge from "../../components/StatusBadge";
 import CustomButton from "../../components/CustomButton";
 import { useAuth } from "../../context/AuthContext";
-
-// Datos de prueba según el rol
-const obtenerNotificaciones = (rol, nombre) => {
-  const roleKey = (rol || "empleado").toLowerCase();
-
-  if (roleKey === "rrhh") {
-    return [
-      {
-        id: "rrhh-1",
-        titulo: "Nuevas Solicitudes en Cola RRHH",
-        descripcion: `${nombre}, hay 3 constancias salariales y 2 vacaciones aprobadas listas para validación.`,
-        fecha: "Hace 10 min",
-        estado: "pendiente",
-        icono: "file-tray-full-outline",
-        colorIcono: "#D97706",
-        bgIcono: "#FEF3C7",
-        leida: false,
-      },
-      {
-        id: "rrhh-2",
-        titulo: "Reporte Mensual Generado",
-        descripcion: "El consolidado de ausencias y permisos de Grupo Calma se exportó bien.",
-        fecha: "Hace 1 hora",
-        estado: "aprobado",
-        icono: "stats-chart-outline",
-        colorIcono: "#059669",
-        bgIcono: "#D1FAE5",
-        leida: false,
-      },
-      {
-        id: "rrhh-3",
-        titulo: "Expediente Pendiente de Firma",
-        descripcion: "Falta comprobante del ISSS en el trámite #1042 de Operaciones.",
-        fecha: "Ayer, 3:15 PM",
-        estado: "urgente",
-        icono: "alert-circle-outline",
-        colorIcono: "#DC2626",
-        bgIcono: "#FEE2E2",
-        leida: true,
-      },
-    ];
-  }
-
-  if (roleKey === "jefe" || roleKey === "gerente" || roleKey === "analista") {
-    return [
-      {
-        id: "jefe-1",
-        titulo: "Aprobación Requerida",
-        descripcion: `${nombre}, tienes 2 solicitudes de permiso de tu equipo esperando visto bueno.`,
-        fecha: "Hace 20 min",
-        estado: "pendiente",
-        icono: "time-outline",
-        colorIcono: "#D97706",
-        bgIcono: "#FEF3C7",
-        leida: false,
-      },
-      {
-        id: "jefe-2",
-        titulo: "Vacaciones Programadas",
-        descripcion: "Se actualizó el calendario de turnos del área para la otra semana.",
-        fecha: "Hace 3 horas",
-        estado: "info",
-        icono: "calendar-outline",
-        colorIcono: "#2563EB",
-        bgIcono: "#EFF6FF",
-        leida: false,
-      },
-    ];
-  }
-
-  // Vista empleado
-  return [
-    {
-      id: "emp-1",
-      titulo: "Solicitud de Vacaciones Aprobada",
-      descripcion: `Hola ${nombre}, tus vacaciones del 12 al 19 de noviembre ya fueron aprobadas.`,
-      fecha: "Hace 15 min",
-      estado: "aprobado",
-      icono: "checkmark-circle-outline",
-      colorIcono: "#059669",
-      bgIcono: "#D1FAE5",
-      leida: false,
-    },
-    {
-      id: "emp-2",
-      titulo: "Constancia Salarial Disponible",
-      descripcion: "Tu constancia con firma y QR ya está lista para descargar.",
-      fecha: "Hace 2 horas",
-      estado: "activo",
-      icono: "document-text-outline",
-      colorIcono: "#2563EB",
-      bgIcono: "#EFF6FF",
-      leida: false,
-    },
-    {
-      id: "emp-3",
-      titulo: "Observación en Permiso Médico",
-      descripcion: "Falta subir el comprobante del ISSS para completar el trámite.",
-      fecha: "02 Oct 2026",
-      estado: "rechazado",
-      icono: "alert-circle-outline",
-      colorIcono: "#DC2626",
-      bgIcono: "#FEE2E2",
-      leida: true,
-    },
-  ];
-};
+import {
+  listarNotificaciones,
+  marcarTodasLeidas as marcarLeidasServicio,
+} from "../../services/notificacionesService";
 
 export default function NotificacionesScreen({ onBack }) {
   const { usuario } = useAuth();
@@ -127,11 +24,12 @@ export default function NotificacionesScreen({ onBack }) {
   const [notificaciones, setNotificaciones] = useState([]);
 
   useEffect(() => {
-    setNotificaciones(obtenerNotificaciones(userRole, userName));
-  }, [userRole, userName]);
+    setNotificaciones(listarNotificaciones(usuario));
+  }, [usuario]);
 
   const marcarTodasLeidas = () => {
-    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
+    marcarLeidasServicio(usuario);
+    setNotificaciones(listarNotificaciones(usuario));
   };
 
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
@@ -165,6 +63,10 @@ export default function NotificacionesScreen({ onBack }) {
           onPress={marcarTodasLeidas}
           style={styles.markReadBtn}
         />
+      )}
+
+      {notificaciones.length === 0 && (
+        <Text style={styles.vacio}>No tienes notificaciones por ahora.</Text>
       )}
 
       {notificaciones.map((item) => (
@@ -252,5 +154,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#64748B",
     marginLeft: 4,
+  },
+  vacio: {
+    textAlign: "center",
+    color: "#64748B",
+    marginTop: 30,
   },
 });

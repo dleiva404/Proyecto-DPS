@@ -6,6 +6,7 @@ export function generarConstancia({
   fechaIngreso,
   cargo,
   departamento,
+  empresa,
   salario,
   destinatario,
   autorizadoPor,
@@ -15,8 +16,16 @@ export function generarConstancia({
   const nombreEmpleado = String(empleado || "").trim();
   const nombreAutorizador = String(autorizadoPor || "").trim();
   const codigoVerificacion = String(codigo || "").trim();
+  const nombreEmpresa = String(empresa || "Grupo Calma")
+    .trim()
+    .toUpperCase();
 
-  if (!nombreEmpleado || !fechaIngreso || !nombreAutorizador || !codigoVerificacion) {
+  if (
+    !nombreEmpleado ||
+    !fechaIngreso ||
+    !nombreAutorizador ||
+    !codigoVerificacion
+  ) {
     throw new Error("Faltan datos obligatorios de la constancia.");
   }
 
@@ -42,7 +51,7 @@ export function generarConstancia({
 
   const antiguedadCalculada = calcularAntiguedad(
     fechaIngreso,
-    new Date(`${fechaDocumento}T12:00:00`)
+    new Date(`${fechaDocumento}T12:00:00`),
   );
 
   if (!antiguedadCalculada || !antiguedadCalculada.texto) {
@@ -62,7 +71,14 @@ export function generarConstancia({
     .trim()
     .toLowerCase();
 
-  if (!["laboral", "salarial", "constancia laboral", "constancia salarial"].includes(tipoNormalizado)) {
+  if (
+    ![
+      "laboral",
+      "salarial",
+      "constancia laboral",
+      "constancia salarial",
+    ].includes(tipoNormalizado)
+  ) {
     throw new Error("El tipo de constancia no es válido.");
   }
 
@@ -85,15 +101,13 @@ export function generarConstancia({
     ? "Constancia salarial"
     : "Constancia laboral";
 
-  const salarioTexto = esSalarial
-    ? `$${salarioNumero.toFixed(2)}`
-    : null;
+  const salarioTexto = esSalarial ? `$${salarioNumero.toFixed(2)}` : null;
 
   const contenido = [
-    "DIDELCO",
+    nombreEmpresa,
     tipoConstancia.toUpperCase(),
     "",
-    `Por medio de la presente se hace constar que ${nombreEmpleado} labora en DIDELCO.`,
+    `Por medio de la presente se hace constar que ${nombreEmpleado} labora en ${nombreEmpresa}.`,
     cargo ? `Cargo: ${cargo}.` : null,
     departamento ? `Departamento: ${departamento}.` : null,
     `Fecha de ingreso: ${fechaIngreso}.`,

@@ -92,7 +92,7 @@ export const usuariosMock = [
     clave: "123456",
     rol: "EMPLEADO",
     puesto: "Auxiliar de compras",
-    empresa: "Didelco",
+    empresa: "Invercalma",
     departamento: "Compras",
     jefeId: "u2",
     fechaIngreso: "2021-05-10",

@@ -2,6 +2,7 @@ import { usuariosMock } from "./usuariosMock";
 import { solicitudesSeed } from "./solicitudesMock";
 import { ESTADOS, ETAPAS } from "../constants/estados";
 import { listarVacacionesEmpleado } from "./solicitudesVacacionesService";
+import { nombreFeriado } from "./vacacionesService";
 
 // Almacén en memoria: se pierde al recargar. Cuando se conecte Firestore,
 // estas funciones cambian de implementación pero no de nombre.
@@ -51,6 +52,8 @@ export function validarPermiso({ empresa, motivo, fecha }) {
     errores.fecha = "Usa el formato AAAA-MM-DD";
   } else if (new Date(`${fecha}T12:00:00`).getDay() === 0) {
     errores.fecha = "El domingo no se trabaja, elige otro día";
+  } else if (nombreFeriado(fecha)) {
+    errores.fecha = `Ese día es feriado (${nombreFeriado(fecha)}), no se trabaja`;
   } else if (fecha < hoyTexto()) {
     errores.fecha = "No puedes pedir permiso para un día que ya pasó";
   }

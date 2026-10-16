@@ -34,7 +34,7 @@ function limpiar(texto) {
 
 function textoQR(c) {
   return [
-    "CONSTANCIA VERIFICADA - DIDELCO",
+    `CONSTANCIA VERIFICADA - ${(c.empresa || "Grupo Calma").toUpperCase()}`,
     `Código: ${c.codigo}`,
     `Empleado: ${c.empleado}`,
     `Tipo: ${c.tipo}`,
@@ -44,6 +44,7 @@ function textoQR(c) {
 }
 
 async function armarHtml(c) {
+  const empresa = limpiar(c.empresa || "Grupo Calma").toUpperCase();
   const qrSvg = await QRCode.toString(textoQR(c), {
     type: "svg",
     margin: 1,
@@ -70,7 +71,7 @@ async function armarHtml(c) {
 <body>
   <div class="encabezado">
     <div>
-      <div class="empresa">DIDELCO</div>
+            <div class="empresa">${empresa}</div>
       <div class="sub">Grupo Calma · Recursos Humanos</div>
     </div>
   </div>
@@ -78,7 +79,7 @@ async function armarHtml(c) {
   <h1>${limpiar(c.tipo).toUpperCase()}</h1>
 
   <p>Por medio de la presente se hace constar que <b>${limpiar(c.empleado)}</b>
-  labora en <b>DIDELCO</b> desde el ${fechaLarga(c.fechaIngreso)}, con una
+    labora en <b>${empresa}</b> desde el ${fechaLarga(c.fechaIngreso)}, con una
   antigüedad de <b>${limpiar(c.antiguedad)}</b>${
     c.cargo ? `, desempeñando el cargo de <b>${limpiar(c.cargo)}</b>` : ""
   }${
