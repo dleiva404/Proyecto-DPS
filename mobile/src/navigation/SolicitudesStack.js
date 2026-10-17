@@ -22,11 +22,12 @@ import DetalleVacacionesScreen from "../screens/vacaciones/DetalleVacacionesScre
 
 import SolicitarConstanciaScreen from "../screens/constancias/SolicitarConstanciaScreen";
 import VerConstanciaScreen from "../screens/constancias/VerConstanciaScreen";
-
-import BandejaConstanciasScreen from "../screens/constancias/BandejaConstanciasScreen";
 import HistorialConstanciasScreen from "../screens/constancias/HistorialConstanciasScreen";
-
 import AutorizarConstanciaScreen from "../screens/constancias/AutorizarConstanciaScreen";
+
+// La bandeja de constancias se quitó de aquí porque
+// las solicitudes pendientes ya se atienden desde
+// la bandeja general, según el rol del usuario.
 
 // =====================================================
 // NAVEGADOR PRINCIPAL DE SOLICITUDES
@@ -91,21 +92,14 @@ export default function SolicitudesStack() {
         options={{ title: "Ver constancia" }}
       />
 
-      {/* Bandeja de solicitudes pendientes de RRHH */}
-      <Stack.Screen
-        name="BandejaConstancias"
-        component={BandejaConstanciasScreen}
-        options={{ title: "Constancias pendientes" }}
-      />
-
-      {/* Historial de constancias del empleado */}
+      {/* Desde aquí el empleado puede consultar sus constancias. */}
       <Stack.Screen
         name="HistorialConstancias"
         component={HistorialConstanciasScreen}
         options={{ title: "Mis constancias" }}
       />
 
-      {/* Revisión y autorización de constancias */}
+      {/* Se mantiene la pantalla de autorización para el flujo de revisión. */}
       <Stack.Screen
         name="AutorizarConstancia"
         component={AutorizarConstanciaScreen}

@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from "react";
 import {
   View,
@@ -45,7 +46,7 @@ function armarLista(usuario) {
   const constancias = listarConstanciasPropias(usuario).map((s) => ({
     id: s.id,
     tipo: "constancia",
-    titulo: s.tipo.includes("salarial")
+    titulo: String(s.tipo ?? "").toLowerCase().includes("salarial")
       ? "Constancia salarial"
       : "Constancia laboral",
     detalle: `Dirigida a: ${s.destinatario}`,
@@ -102,9 +103,9 @@ export default function HistorialScreen({ navigation }) {
       </View>
 
       <CustomButton
-        title="Solicitar constancia"
+        title="Mis constancias"
         type="secondary"
-        onPress={() => navigation.navigate("SolicitarConstancia")}
+        onPress={() => navigation.navigate("HistorialConstancias")}
         style={styles.botonConstancia}
       />
 

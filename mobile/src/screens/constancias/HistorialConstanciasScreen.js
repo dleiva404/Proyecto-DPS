@@ -88,6 +88,12 @@ export default function HistorialConstanciasScreen({ navigation }) {
     const aprobada = item.estado === "Aprobada";
     const rechazada = item.estado === "Rechazada";
 
+    // Reconoce tanto "salarial" como "Constancia salarial",
+    // sin importar mayúsculas o minúsculas.
+    const esSalarial = String(item.tipo ?? "")
+      .toLowerCase()
+      .includes("salarial");
+
     return (
       <View style={styles.tarjeta}>
         <View style={styles.fila}>
@@ -112,7 +118,7 @@ export default function HistorialConstanciasScreen({ navigation }) {
         {/* Tipo de constancia */}
         <Text style={styles.tipo}>
           Constancia{" "}
-          {item.tipo === "salarial" ? "salarial" : "laboral"}
+          {esSalarial ? "salarial" : "laboral"}
         </Text>
 
         {/* Destinatario */}
