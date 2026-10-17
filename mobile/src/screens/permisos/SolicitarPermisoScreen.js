@@ -24,7 +24,9 @@ export default function SolicitarPermisoScreen({ navigation, route }) {
   const { usuario } = useAuth();
   const existente = route?.params?.solicitud ?? null;
 
-  const [empresa, setEmpresa] = useState(existente?.empresa ?? null);
+  const [empresa, setEmpresa] = useState(
+    existente?.empresa ?? usuario.empresa ?? null,
+  );
   const [departamento, setDepartamento] = useState(
     existente?.departamento ?? usuario.departamento,
   );

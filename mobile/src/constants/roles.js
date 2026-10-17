@@ -6,6 +6,14 @@ export const ROLES = {
   RRHH: "RRHH",
 };
 
+export const NOMBRE_ROL = {
+  EMPLEADO: "Empleado",
+  JEFE: "Jefe inmediato",
+  ANALISTA: "Analista de Nómina",
+  GERENTE: "Gerente",
+  RRHH: "Recursos Humanos",
+};
+
 export const APROBADORES = [
   ROLES.JEFE,
   ROLES.ANALISTA,

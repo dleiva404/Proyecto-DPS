@@ -9,7 +9,7 @@ export const solicitudesSeed = [
     empresa: "DCA",
     tipo: "Permiso Personal",
     motivo: "Cita médica",
-    fecha: "2026-10-20",
+    fecha: "2026-12-03",
     estado: "Pendiente",
     etapaActual: "JEFE",
     motivoRechazo: null,
@@ -55,7 +55,8 @@ export const solicitudesSeed = [
     fecha: "2026-10-08",
     estado: "Rechazada",
     etapaActual: null,
-    motivoRechazo: "Se requiere personal disponible durante la fecha solicitada.",
+    motivoRechazo:
+      "Se requiere personal disponible durante la fecha solicitada.",
     creadaEn: "2026-09-30T08:00:00.000Z",
     historial: [
       {
@@ -75,7 +76,7 @@ export const solicitudesSeed = [
     empresa: "Copro",
     tipo: "Permiso Personal",
     motivo: "Diligencia personal",
-    fecha: "2026-10-22",
+    fecha: "2026-12-10",
     estado: "Pendiente",
     etapaActual: "JEFE",
     motivoRechazo: null,
@@ -90,7 +91,7 @@ export const solicitudesSeed = [
     empresa: "Steel International",
     tipo: "Permiso Personal",
     motivo: "Trámite personal",
-    fecha: "2026-10-27",
+    fecha: "2026-12-15",
     estado: "Pendiente",
     etapaActual: "ANALISTA",
     motivoRechazo: null,

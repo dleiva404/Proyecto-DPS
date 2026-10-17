@@ -21,6 +21,7 @@ export function crearConstancia(usuario, { tipo, destinatario, motivo }) {
     id: `CON-${String(contador).padStart(3, "0")}`,
     empleadoUid: usuario.id,
     empleado: `${usuario.nombre} ${usuario.apellido}`,
+    empleadoRol: usuario.rol,
     cargo: usuario.puesto,
     departamento: usuario.departamento,
     empresa: usuario.empresa,
@@ -44,10 +45,15 @@ export function listarConstanciasPropias(usuario) {
     .sort((a, b) => b.creadaEn.localeCompare(a.creadaEn));
 }
 
-// Para RRHH: las que esperan autorización
-export function listarConstanciasPendientes() {
+function puedeAutorizar(usuario, c) {
+  if (!usuario || c.empleadoUid === usuario.id) return false;
+  if (usuario.rol === "RRHH") return true;
+  return usuario.rol === "GERENTE" && c.empleadoRol === "RRHH";
+}
+
+export function listarConstanciasPendientes(usuario) {
   return almacen
-    .filter((c) => c.estado === "Pendiente")
+    .filter((c) => c.estado === "Pendiente" && puedeAutorizar(usuario, c))
     .map(copia)
     .sort((a, b) => a.creadaEn.localeCompare(b.creadaEn));
 }
@@ -60,8 +66,8 @@ export function obtenerConstancia(id) {
 export function resolverConstancia(usuario, id, decision, observacion = "") {
   const actual = almacen.find((c) => c.id === id);
   if (!actual) return { ok: false, error: "La constancia no existe." };
-  if (usuario.rol !== "RRHH") {
-    return { ok: false, error: "Solo RRHH puede autorizar constancias." };
+  if (!puedeAutorizar(usuario, actual)) {
+    return { ok: false, error: "No puedes autorizar esta constancia." };
   }
   if (actual.estado !== "Pendiente") {
     return { ok: false, error: "Esta solicitud ya tiene una decisión." };
@@ -78,7 +84,8 @@ export function resolverConstancia(usuario, id, decision, observacion = "") {
         autorizadoPor: `${usuario.nombre} ${usuario.apellido}`,
         codigo: nuevoCodigo(),
       });
-      cambios = { ...cambios, ...documento };
+      const autorizadoRol = usuario.rol === "RRHH" ? "RRHH" : "Gerente";
+      cambios = { ...cambios, ...documento, autorizadoRol };
     } catch (error) {
       return { ok: false, error: error.message };
     }

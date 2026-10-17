@@ -28,10 +28,10 @@ export default function LoginScreen() {
     const e = {};
     if (!correo.trim()) e.correo = "El correo es obligatorio";
     else if (!regexCorreo.test(correo.trim()))
-      e.correo = "Formato de correo no valido";
+      e.correo = "Formato de correo no válido";
 
     if (!clave) e.clave = "La contraseña es obligatoria";
-    else if (clave.length < 6) e.clave = "Minimo 6 caracteres";
+    else if (clave.length < 6) e.clave = "Mínimo 6 caracteres";
 
     setErrores(e);
     return Object.keys(e).length === 0;
@@ -51,23 +51,25 @@ export default function LoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-      
+
       <View style={styles.headerContainer}>
-        <Image 
-          source={require("../../../assets/LogoGC.png")} 
+        <Image
+          source={require("../../../assets/LogoGC.png")}
           style={styles.logoImage}
           resizeMode="contain"
         />
         <Text style={styles.titulo}>Gestión Recursos Humanos</Text>
         <Text style={styles.subtitulo}>Grupo Calma</Text>
-        <Text style={styles.instructions}>Ingrese sus credenciales para continuar</Text>
+        <Text style={styles.instructions}>
+          Ingrese sus credenciales para continuar
+        </Text>
       </View>
 
       <View style={styles.formContainer}>
         <Text style={styles.label}>CORREO ELECTRÓNICO</Text>
         <TextInput
           style={[styles.input, errores.correo && styles.inputError]}
-          placeholder="rrhh@didelco.com"
+          placeholder="usuario@empresa.com"
           placeholderTextColor="#94a3b8"
           value={correo}
           onChangeText={setCorreo}
@@ -152,11 +154,11 @@ const styles = StyleSheet.create({
   formContainer: {
     width: "100%",
   },
-  label: { 
-    fontSize: 12, 
-    fontWeight: "700", 
-    color: "#334155", 
-    marginBottom: 8, 
+  label: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#334155",
+    marginBottom: 8,
     marginTop: 18,
     letterSpacing: 0.5,
   },
@@ -182,7 +184,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#1E293B",
   },
-  inputError: { 
+  inputError: {
     borderWidth: 1,
     borderColor: "#dc2626",
     backgroundColor: "#FEF2F2",

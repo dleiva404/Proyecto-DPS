@@ -20,6 +20,7 @@ import {
   obtenerSaldoDisponible,
   obtenerResumenSaldo,
 } from "../../services/solicitudesVacacionesService";
+import { listarPropias } from "../../services/solicitudesService";
 
 export default function SolicitarVacacionesScreen({ navigation }) {
   const { usuario } = useAuth();
@@ -45,11 +46,11 @@ export default function SolicitarVacacionesScreen({ navigation }) {
       return;
     }
 
-    const resultado = crearSolicitudVacaciones(usuario, {
-      fechaInicio,
-      fechaFin,
-      motivo,
-    });
+    const resultado = crearSolicitudVacaciones(
+      usuario,
+      { fechaInicio, fechaFin, motivo },
+      listarPropias(usuario),
+    );
 
     if (!resultado.ok) {
       Alert.alert(

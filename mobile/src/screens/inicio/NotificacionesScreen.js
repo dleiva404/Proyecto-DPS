@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  BackHandler,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import CustomCard from "../../components/CustomCard";
@@ -26,6 +27,15 @@ export default function NotificacionesScreen({ onBack }) {
   useEffect(() => {
     setNotificaciones(listarNotificaciones(usuario));
   }, [usuario]);
+
+  useEffect(() => {
+    if (!onBack) return undefined;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onBack();
+      return true;
+    });
+    return () => sub.remove();
+  }, [onBack]);
 
   const marcarTodasLeidas = () => {
     marcarLeidasServicio(usuario);

@@ -19,7 +19,7 @@ import {
 const ROLES_APROBADORES = ["jefe", "analista", "gerente", "rrhh"];
 
 export default function InicioScreen({ route, navigation }) {
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
 
   const [verNotificaciones, setVerNotificaciones] = useState(false);
   const [saldoVacaciones, setSaldoVacaciones] = useState(15);
@@ -73,7 +73,6 @@ export default function InicioScreen({ route, navigation }) {
         subtitle="GRUPO CALMA"
         userName={userName}
         userRole={userRole}
-        onLogout={logout}
         onNotificationsPress={() => setVerNotificaciones(true)}
         unreadCount={noLeidas}
       />

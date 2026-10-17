@@ -43,7 +43,7 @@ export default function DetalleVacacionesScreen({ route }) {
 
     if (registro) {
       const aprobo = registro.decision === "Aprobar";
-      texto = `${aprobo ? "Aprobó" : "Rechazó"} · ${formatearFechaHora(registro.fecha)}`;
+      texto = `${aprobo ? "Aprobó" : "Rechazó"} ${registro.responsable ?? ""} · ${formatearFechaHora(registro.fecha)}`;
       color = aprobo ? theme.colors.success : theme.colors.error;
     } else if (solicitud.etapaActual === etapa) {
       texto = "Revisando ahora";

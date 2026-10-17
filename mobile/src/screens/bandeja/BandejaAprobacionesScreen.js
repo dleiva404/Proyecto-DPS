@@ -46,7 +46,7 @@ export default function BandejaAprobacionesScreen({ navigation }) {
       setVacaciones([]);
     }
     setPermisos(usuario ? pendientesDeEquipo(usuario) : []);
-    setConstancias(rol === "RRHH" ? listarConstanciasPendientes() : []);
+    setConstancias(listarConstanciasPendientes(usuario));
   }, [rol, usuario]);
 
   useFocusEffect(
@@ -105,7 +105,15 @@ export default function BandejaAprobacionesScreen({ navigation }) {
   };
 
   // ---- permisos ----
+
   const aprobarPermiso = (id) => {
+    Alert.alert("Aprobar solicitud", `¿Deseas aprobar ${id}?`, [
+      { text: "Cancelar", style: "cancel" },
+      { text: "Aprobar", onPress: () => confirmarPermiso(id) },
+    ]);
+  };
+
+  const confirmarPermiso = (id) => {
     const resultado = decidirPermiso(usuario, id, "Aprobado");
     if (!resultado.ok) {
       Alert.alert("No se pudo procesar", resultado.error);

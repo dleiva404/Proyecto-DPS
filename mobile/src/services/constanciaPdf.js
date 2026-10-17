@@ -38,7 +38,7 @@ function textoQR(c) {
     `Código: ${c.codigo}`,
     `Empleado: ${c.empleado}`,
     `Tipo: ${c.tipo}`,
-    `Autorizado por: ${c.autorizadoPor} (RRHH)`,
+    `Autorizado por: ${c.autorizadoPor} (${c.autorizadoRol || "RRHH"})`,
     `Fecha de emisión: ${fechaLarga(c.fechaEmision)}`,
   ].join("\n");
 }

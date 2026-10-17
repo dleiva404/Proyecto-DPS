@@ -36,8 +36,7 @@ export function contarPorRevisar(usuario) {
   if (!usuario) return { permisos: 0, vacaciones: 0, constancias: 0, total: 0 };
   const permisos = pendientesDeEquipo(usuario).length;
   const vacaciones = listarVacacionesPendientesPorRol(usuario).length;
-  const constancias =
-    usuario.rol === "RRHH" ? listarConstanciasPendientes().length : 0;
+  const constancias = listarConstanciasPendientes(usuario).length;
   return {
     permisos,
     vacaciones,

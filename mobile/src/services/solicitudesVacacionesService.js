@@ -82,7 +82,7 @@ export function obtenerResumenSaldo(usuario, hoy = new Date()) {
     disponible: Math.max(0, DIAS_ANUALES - aprobados - enTramite),
   };
 }
-export function crearSolicitudVacaciones(usuario, datos) {
+export function crearSolicitudVacaciones(usuario, datos, permisos = []) {
   if (!usuario?.id) {
     return {
       ok: false,
@@ -114,6 +114,21 @@ export function crearSolicitudVacaciones(usuario, datos) {
       ok: false,
       errores: {
         fechas: `Esas fechas se cruzan con tu solicitud ${traslape.id} (${traslape.fechaInicio} al ${traslape.fechaFin}).`,
+      },
+    };
+  }
+
+  const permisoEnRango = permisos.find(
+    (p) =>
+      p.estado !== "Rechazada" &&
+      datos.fechaInicio <= p.fecha &&
+      p.fecha <= datos.fechaFin,
+  );
+  if (permisoEnRango) {
+    return {
+      ok: false,
+      errores: {
+        fechas: `Ya tienes el permiso ${permisoEnRango.id} el ${permisoEnRango.fecha}, dentro de esas fechas.`,
       },
     };
   }
@@ -214,6 +229,7 @@ export function decidirSolicitudVacaciones(id, usuario, decision, motivo = "") {
     {
       rol,
       decision,
+      responsable: `${usuario.nombre} ${usuario.apellido}`,
       motivo: motivo.trim(),
       fecha: new Date().toISOString(),
     },

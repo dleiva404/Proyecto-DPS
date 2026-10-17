@@ -108,6 +108,8 @@ export function obtenerPeriodoVacacional(
     );
   }
 
+  if (inicio.getFullYear() === ingreso.getFullYear()) return null;
+
   const fin = crearFechaAniversario(fechaIngreso, inicio.getFullYear() + 1);
 
   return {
@@ -169,7 +171,8 @@ export function validarSolicitudVacaciones({
       const periodo = obtenerPeriodoVacacional(fechaIngreso);
 
       if (!periodo) {
-        errores.fechaIngreso = "No se pudo calcular tu período vacacional.";
+        errores.fechaIngreso =
+          "Aún no cumples un año de trabajo; las vacaciones se ganan al cumplir el primer año.";
       } else if (fechaInicio < periodo.inicio || fechaFin >= periodo.fin) {
         errores.fechas = `Las fechas deben estar dentro de tu período anual: ${periodo.inicio} a ${periodo.fin}.`;
       }
