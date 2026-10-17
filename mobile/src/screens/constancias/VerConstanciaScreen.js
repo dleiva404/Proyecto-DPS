@@ -1,23 +1,22 @@
-
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
-import QRCode from "react-native-qrcode-svg";
+import { descargarConstanciaPdf } from "../../services/constanciaPdf";
+import { obtenerConstancia } from "../../services/constanciasService";
 
 export default function VerConstanciaScreen({ route }) {
-  const constancia = route?.params?.constancia;
-
+  const constancia = obtenerConstancia(route?.params?.id);
+  const [generando, setGenerando] = useState(false);
   if (!constancia) {
     return (
       <View style={styles.contenedorVacio}>
-        <Text style={styles.titulo}>Ver constancia</Text>
-        <Text style={styles.aviso}>
-          No hay una constancia seleccionada.
-        </Text>
+        <Text style={styles.aviso}>No hay una constancia seleccionada.</Text>
       </View>
     );
   }
@@ -25,38 +24,35 @@ export default function VerConstanciaScreen({ route }) {
   if (constancia.estado !== "Aprobada") {
     return (
       <View style={styles.contenedorVacio}>
-        <Text style={styles.titulo}>Ver constancia</Text>
         <Text style={styles.aviso}>
-          La constancia estará disponible cuando
-          Recursos Humanos apruebe la solicitud.
+          {constancia.estado === "Rechazada"
+            ? `RRHH rechazó la solicitud: ${constancia.observacion}`
+            : "La constancia estará disponible cuando Recursos Humanos apruebe la solicitud."}
         </Text>
       </View>
     );
   }
 
-  const tieneDatosQR =
-    Boolean(constancia.codigo) &&
-    Boolean(constancia.autorizadoPor);
-
-  const datosQR = tieneDatosQR
-    ? JSON.stringify({
-        codigo: constancia.codigo,
-        autorizadoPor: constancia.autorizadoPor,
-        fechaEmision: constancia.fechaEmision || null,
-        empresa: "DIDELCO",
-      })
-    : null;
+  const descargar = async () => {
+    try {
+      setGenerando(true);
+      await descargarConstanciaPdf(constancia);
+    } catch (error) {
+      Alert.alert(
+        "No se pudo generar el PDF",
+        error?.message || "Intenta de nuevo.",
+      );
+    } finally {
+      setGenerando(false);
+    }
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.contenedor}>
-      <Text style={styles.titulo}>Ver constancia</Text>
-
       <View style={styles.tarjeta}>
         <Text style={styles.empresa}>DIDELCO</Text>
 
-        <Text style={styles.subtitulo}>
-          {constancia.tipo || "Constancia"}
-        </Text>
+        <Text style={styles.subtitulo}>{constancia.tipo || "Constancia"}</Text>
 
         <View style={styles.separador} />
 
@@ -66,13 +62,9 @@ export default function VerConstanciaScreen({ route }) {
         </Text>
 
         <Text style={styles.etiqueta}>Estado</Text>
-        <Text style={styles.estado}>
-          {constancia.estado}
-        </Text>
+        <Text style={styles.estado}>{constancia.estado}</Text>
 
-        <Text style={styles.etiqueta}>
-          Antigüedad laboral
-        </Text>
+        <Text style={styles.etiqueta}>Antigüedad laboral</Text>
         <Text style={styles.valor}>
           {constancia.antiguedad || "No disponible"}
         </Text>
@@ -82,33 +74,21 @@ export default function VerConstanciaScreen({ route }) {
           {constancia.autorizadoPor || "No disponible"}
         </Text>
 
-        <Text style={styles.etiqueta}>
-          Fecha de emisión
-        </Text>
+        <Text style={styles.etiqueta}>Fecha de emisión</Text>
         <Text style={styles.valor}>
           {constancia.fechaEmision || "No disponible"}
         </Text>
-
-        <View style={styles.separador} />
-
-        <Text style={styles.qrTitulo}>
-          Datos de autorización
-        </Text>
-
-        {datosQR ? (
-          <View style={styles.qrContenedor}>
-            <QRCode value={datosQR} size={140} />
-          </View>
-        ) : (
-          <Text style={styles.qrTexto}>
-            Información de autorización no disponible.
-          </Text>
-        )}
-
-        <Text style={styles.codigo}>
-          {constancia.codigo || "Código no disponible"}
-        </Text>
       </View>
+
+      <TouchableOpacity
+        style={[styles.boton, generando && styles.botonDeshabilitado]}
+        onPress={descargar}
+        disabled={generando}
+      >
+        <Text style={styles.textoBoton}>
+          {generando ? "Generando PDF..." : "Descargar PDF"}
+        </Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -124,12 +104,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
     padding: 20,
     justifyContent: "center",
-  },
-  titulo: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1e3a8a",
-    marginBottom: 20,
   },
   tarjeta: {
     backgroundColor: "#fff",
@@ -171,27 +145,20 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 16,
   },
-  qrTitulo: {
+  boton: {
+    backgroundColor: "#1e3a8a",
+    borderRadius: 10,
+    padding: 16,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  botonDeshabilitado: {
+    opacity: 0.6,
+  },
+  textoBoton: {
+    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 12,
-  },
-  qrContenedor: {
-    alignSelf: "center",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
-    backgroundColor: "#fff",
-  },
-  qrTexto: {
-    textAlign: "center",
-    color: "#64748b",
-  },
-  codigo: {
-    textAlign: "center",
-    marginTop: 12,
-    color: "#475569",
   },
   aviso: {
     fontSize: 15,
@@ -199,5 +166,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-
-

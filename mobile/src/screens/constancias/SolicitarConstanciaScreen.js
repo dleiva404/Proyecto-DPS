@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   View,
@@ -10,14 +9,16 @@ import {
   StyleSheet,
 } from "react-native";
 
+import { useAuth } from "../../context/AuthContext";
+import { crearConstancia } from "../../services/constanciasService";
+
 const TIPOS_CONSTANCIA = [
   { id: "laboral", nombre: "Laboral" },
   { id: "salarial", nombre: "Salarial" },
 ];
 
-export default function SolicitarConstanciaScreen({
-  onSolicitar,
-}) {
+export default function SolicitarConstanciaScreen({ navigation }) {
+  const { usuario } = useAuth();
   const [tipo, setTipo] = useState("laboral");
   const [destinatario, setDestinatario] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -30,18 +31,7 @@ export default function SolicitarConstanciaScreen({
     const motivoLimpio = motivo.trim();
 
     if (!destinatarioLimpio || !motivoLimpio) {
-      Alert.alert(
-        "Campos obligatorios",
-        "Completá todos los campos."
-      );
-      return;
-    }
-
-    if (typeof onSolicitar !== "function") {
-      Alert.alert(
-        "Servicio no disponible",
-        "La conexión con el sistema de solicitudes está pendiente."
-      );
+      Alert.alert("Campos obligatorios", "Completa todos los campos.");
       return;
     }
 
@@ -54,21 +44,22 @@ export default function SolicitarConstanciaScreen({
     try {
       setEnviando(true);
 
-      await onSolicitar(datosSolicitud);
+      const resultado = crearConstancia(usuario, datosSolicitud);
+      if (!resultado.ok) throw new Error(resultado.error);
 
       Alert.alert(
         "Solicitud enviada",
-        "Tu solicitud de constancia fue enviada a Recursos Humanos."
+        "Tu solicitud de constancia fue enviada a Recursos Humanos.",
       );
 
       setTipo("laboral");
       setDestinatario("");
       setMotivo("");
+      navigation.goBack();
     } catch (error) {
       Alert.alert(
         "No se pudo enviar",
-        error?.message ||
-          "Ocurrió un problema al enviar la solicitud."
+        error?.message || "Ocurrió un problema al enviar la solicitud.",
       );
     } finally {
       setEnviando(false);
@@ -80,18 +71,12 @@ export default function SolicitarConstanciaScreen({
       contentContainerStyle={styles.contenedor}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.titulo}>
-        Solicitar constancia
-      </Text>
-
       <Text style={styles.descripcion}>
-        Completá la información para solicitar una
-        constancia a Recursos Humanos.
+        Completa la información para solicitar una constancia a Recursos
+        Humanos.
       </Text>
 
-      <Text style={styles.etiqueta}>
-        Tipo de constancia
-      </Text>
+      <Text style={styles.etiqueta}>Tipo de constancia</Text>
 
       <View style={styles.opciones}>
         {TIPOS_CONSTANCIA.map((opcion) => (
@@ -99,8 +84,7 @@ export default function SolicitarConstanciaScreen({
             key={opcion.id}
             style={[
               styles.opcion,
-              tipo === opcion.id &&
-                styles.opcionSeleccionada,
+              tipo === opcion.id && styles.opcionSeleccionada,
             ]}
             onPress={() => setTipo(opcion.id)}
             accessibilityRole="radio"
@@ -111,8 +95,7 @@ export default function SolicitarConstanciaScreen({
             <Text
               style={[
                 styles.textoOpcion,
-                tipo === opcion.id &&
-                  styles.textoSeleccionado,
+                tipo === opcion.id && styles.textoSeleccionado,
               ]}
             >
               {opcion.nombre}
@@ -121,9 +104,7 @@ export default function SolicitarConstanciaScreen({
         ))}
       </View>
 
-      <Text style={styles.etiqueta}>
-        Dirigida a
-      </Text>
+      <Text style={styles.etiqueta}>Dirigida a</Text>
 
       <TextInput
         style={styles.campo}
@@ -136,13 +117,11 @@ export default function SolicitarConstanciaScreen({
         editable={!enviando}
       />
 
-      <Text style={styles.etiqueta}>
-        Motivo de la solicitud
-      </Text>
+      <Text style={styles.etiqueta}>Motivo de la solicitud</Text>
 
       <TextInput
         style={[styles.campo, styles.area]}
-        placeholder="Explicá para qué necesitás la constancia"
+        placeholder="Explica para qué necesitas la constancia"
         placeholderTextColor="#94a3b8"
         multiline
         textAlignVertical="top"
@@ -153,18 +132,13 @@ export default function SolicitarConstanciaScreen({
       />
 
       <TouchableOpacity
-        style={[
-          styles.boton,
-          enviando && styles.botonDeshabilitado,
-        ]}
+        style={[styles.boton, enviando && styles.botonDeshabilitado]}
         onPress={enviarSolicitud}
         disabled={enviando}
         accessibilityRole="button"
       >
         <Text style={styles.textoBoton}>
-          {enviando
-            ? "Enviando solicitud..."
-            : "Solicitar constancia"}
+          {enviando ? "Enviando solicitud..." : "Solicitar constancia"}
         </Text>
       </TouchableOpacity>
     </ScrollView>
@@ -176,12 +150,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     backgroundColor: "#f8fafc",
-  },
-  titulo: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#1e3a8a",
-    marginBottom: 10,
   },
   descripcion: {
     fontSize: 14,
@@ -250,4 +218,3 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
-

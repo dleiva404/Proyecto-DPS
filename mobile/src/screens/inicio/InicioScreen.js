@@ -1,12 +1,5 @@
-
 import React, { useCallback, useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  View,
-  ScrollView,
-  StatusBar,
-} from "react-native";
+import { StyleSheet, Text, View, ScrollView, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 
@@ -16,19 +9,23 @@ import CustomHeader from "../../components/CustomHeader";
 import { useAuth } from "../../context/AuthContext";
 import NotificacionesScreen from "./NotificacionesScreen";
 
+import { obtenerSaldoDisponible } from "../../services/solicitudesVacacionesService";
+import { listarConstanciasPropias } from "../../services/constanciasService";
 import {
-  obtenerSaldoDisponible,
-  listarVacacionesPendientesPorRol,
-} from "../../services/solicitudesVacacionesService";
+  contarPorRevisar,
+  contarNoLeidas,
+} from "../../services/notificacionesService";
 
-const ROLES_APROBADORES = ["jefe", "analista", "gerente"];
+const ROLES_APROBADORES = ["jefe", "analista", "gerente", "rrhh"];
 
 export default function InicioScreen({ route, navigation }) {
-  const { usuario, logout } = useAuth();
+  const { usuario } = useAuth();
 
   const [verNotificaciones, setVerNotificaciones] = useState(false);
   const [saldoVacaciones, setSaldoVacaciones] = useState(15);
-  const [pendientes, setPendientes] = useState(0);
+  const [porRevisar, setPorRevisar] = useState({ total: 0 });
+  const [noLeidas, setNoLeidas] = useState(0);
+  const [constanciasListas, setConstanciasListas] = useState(0);
 
   const userRole = (
     usuario?.rol ||
@@ -39,23 +36,16 @@ export default function InicioScreen({ route, navigation }) {
 
   const userName = usuario?.nombre || usuario?.correo || "Colaborador";
 
-  const rolServicio = userRole.toUpperCase();
-
   const actualizarResumen = useCallback(() => {
-    if (usuario?.id) {
-      setSaldoVacaciones(obtenerSaldoDisponible(usuario));
-    } else {
-      setSaldoVacaciones(0);
-    }
-
-    if (ROLES_APROBADORES.includes(userRole)) {
-      setPendientes(
-        listarVacacionesPendientesPorRol(rolServicio).length,
-      );
-    } else {
-      setPendientes(0);
-    }
-  }, [usuario, userRole, rolServicio]);
+    if (!usuario?.id) return;
+    setSaldoVacaciones(obtenerSaldoDisponible(usuario));
+    setPorRevisar(contarPorRevisar(usuario));
+    setNoLeidas(contarNoLeidas(usuario));
+    setConstanciasListas(
+      listarConstanciasPropias(usuario).filter((c) => c.estado === "Aprobada")
+        .length,
+    );
+  }, [usuario]);
 
   useFocusEffect(
     useCallback(() => {
@@ -66,16 +56,16 @@ export default function InicioScreen({ route, navigation }) {
   if (verNotificaciones) {
     return (
       <NotificacionesScreen
-        onBack={() => setVerNotificaciones(false)}
+        onBack={() => {
+          setVerNotificaciones(false);
+          actualizarResumen();
+        }}
       />
     );
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-    >
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       <CustomHeader
@@ -83,30 +73,21 @@ export default function InicioScreen({ route, navigation }) {
         subtitle="GRUPO CALMA"
         userName={userName}
         userRole={userRole}
-        onLogout={logout}
         onNotificationsPress={() => setVerNotificaciones(true)}
-        unreadCount={2}
+        unreadCount={noLeidas}
       />
 
       <View style={styles.statsRow}>
         <View style={styles.statBox}>
-          <Ionicons
-            name="calendar-outline"
-            size={22}
-            color="#2563EB"
-          />
+          <Ionicons name="calendar-outline" size={22} color="#2563EB" />
           <Text style={styles.statNumber}>{saldoVacaciones}</Text>
           <Text style={styles.statLabel}>Días Vacaciones</Text>
         </View>
 
         <View style={styles.statBox}>
-          <Ionicons
-            name="document-text-outline"
-            size={22}
-            color="#10B981"
-          />
-          <Text style={styles.statNumber}>Activa</Text>
-          <Text style={styles.statLabel}>Constancia Salarial</Text>
+          <Ionicons name="document-text-outline" size={22} color="#10B981" />
+          <Text style={styles.statNumber}>{constanciasListas}</Text>
+          <Text style={styles.statLabel}>Constancias listas</Text>
         </View>
       </View>
 
@@ -130,14 +111,10 @@ export default function InicioScreen({ route, navigation }) {
           </CustomCard>
         )}
 
-        {ROLES_APROBADORES.includes(userRole) && pendientes > 0 && (
+        {ROLES_APROBADORES.includes(userRole) && porRevisar.total > 0 && (
           <CustomCard
             title="Aprobaciones Pendientes"
-            description={
-              pendientes === 1
-                ? "Tienes 1 solicitud de vacaciones pendiente de revisión."
-                : `Tienes ${pendientes} solicitudes de vacaciones pendientes de revisión.`
-            }
+            description={`Tienes por revisar: ${porRevisar.vacaciones} de vacaciones, ${porRevisar.permisos} de permisos y ${porRevisar.constancias} de constancias.`}
             icon="time-outline"
             iconColor="#D97706"
             iconBg="#FEF3C7"
@@ -151,10 +128,10 @@ export default function InicioScreen({ route, navigation }) {
           </CustomCard>
         )}
 
-        {ROLES_APROBADORES.includes(userRole) && pendientes === 0 && (
+        {ROLES_APROBADORES.includes(userRole) && porRevisar.total === 0 && (
           <CustomCard
             title="Todo al día"
-            description="No tienes solicitudes de vacaciones pendientes de revisar."
+            description="No tienes solicitudes pendientes de revisar."
             icon="checkmark-circle-outline"
             iconColor="#059669"
             iconBg="#D1FAE5"

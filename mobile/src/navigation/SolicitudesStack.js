@@ -1,12 +1,11 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-// Módulo de solicitudes: historial general.
 import HistorialScreen from "../screens/permisos/HistorialScreen";
+import SolicitarPermisoScreen from "../screens/permisos/SolicitarPermisoScreen";
+import EstadoSolicitudScreen from "../screens/permisos/EstadoSolicitudScreen";
 
-// Parte 3 - Vacaciones: pantalla para registrar solicitudes.
 import SolicitarVacacionesScreen from "../screens/vacaciones/SolicitarVacacionesScreen";
-
-// Parte 5 - Constancias: solicitud y visualización del documento.
+import DetalleVacacionesScreen from "../screens/vacaciones/DetalleVacacionesScreen";
 import SolicitarConstanciaScreen from "../screens/constancias/SolicitarConstanciaScreen";
 import VerConstanciaScreen from "../screens/constancias/VerConstanciaScreen";
 
@@ -15,28 +14,37 @@ const Stack = createNativeStackNavigator();
 export default function SolicitudesStack() {
   return (
     <Stack.Navigator>
-      {/* Historial general de solicitudes del empleado. */}
       <Stack.Screen
         name="Historial"
         component={HistorialScreen}
         options={{ title: "Mis solicitudes" }}
       />
-
-      {/* Parte 3 - Vacaciones: formulario de solicitud. */}
+      <Stack.Screen
+        name="SolicitarPermiso"
+        component={SolicitarPermisoScreen}
+        options={{ title: "Solicitar permiso" }}
+      />
+      <Stack.Screen
+        name="EstadoSolicitud"
+        component={EstadoSolicitudScreen}
+        options={{ title: "Estado de la solicitud" }}
+      />
       <Stack.Screen
         name="SolicitarVacaciones"
         component={SolicitarVacacionesScreen}
         options={{ title: "Solicitar vacaciones" }}
       />
+      <Stack.Screen
+        name="DetalleVacaciones"
+        component={DetalleVacacionesScreen}
+        options={{ title: "Detalle de vacaciones" }}
+      />
 
-      {/* Parte 5 - Constancias: formulario de solicitud. */}
       <Stack.Screen
         name="SolicitarConstancia"
         component={SolicitarConstanciaScreen}
         options={{ title: "Solicitar constancia" }}
       />
-
-      {/* Parte 5 - Constancias: documento autorizado con código QR. */}
       <Stack.Screen
         name="VerConstancia"
         component={VerConstanciaScreen}

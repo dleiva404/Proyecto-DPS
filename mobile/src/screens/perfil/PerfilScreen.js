@@ -9,17 +9,18 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../context/AuthContext";
+import { NOMBRE_ROL } from "../../constants/roles";
+import { formatearFecha } from "../../services/formato";
 
 export default function PerfilScreen() {
   const { usuario, logout, actualizarFoto } = useAuth();
 
-  // abre la galeria para elegir la foto
   const cambiarFoto = async () => {
     const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permiso.granted) {
       Alert.alert(
         "Permiso requerido",
-        "Necesitamos acceso a la galeria para cambiar la foto",
+        "Necesitamos acceso a la galería para cambiar la foto",
       );
       return;
     }
@@ -37,13 +38,12 @@ export default function PerfilScreen() {
   };
 
   const confirmarSalir = () => {
-    Alert.alert("Cerrar sesion", "¿Seguro que deseas salir?", [
+    Alert.alert("Cerrar sesión", "¿Seguro que deseas salir?", [
       { text: "Cancelar", style: "cancel" },
       { text: "Salir", style: "destructive", onPress: logout },
     ]);
   };
 
-  // iniciales por si no tiene foto
   const iniciales = `${usuario.nombre[0]}${usuario.apellido[0]}`;
 
   return (
@@ -62,25 +62,27 @@ export default function PerfilScreen() {
       <Text style={styles.nombre}>
         {usuario.nombre} {usuario.apellido}
       </Text>
-      <Text style={styles.rol}>{usuario.rol}</Text>
+      <Text style={styles.rol}>{NOMBRE_ROL[usuario.rol] ?? usuario.rol}</Text>
 
       <View style={styles.tarjeta}>
-        <Dato label="Codigo" valor={usuario.codigo} />
+        <Dato label="Código" valor={usuario.codigo} />
         <Dato label="Correo" valor={usuario.correo} />
         <Dato label="Puesto" valor={usuario.puesto} />
         <Dato label="Departamento" valor={usuario.departamento} />
         <Dato label="Empresa" valor={usuario.empresa} />
-        <Dato label="Fecha de ingreso" valor={usuario.fechaIngreso} />
+        <Dato
+          label="Fecha de ingreso"
+          valor={formatearFecha(usuario.fechaIngreso)}
+        />
       </View>
 
       <TouchableOpacity style={styles.btnSalir} onPress={confirmarSalir}>
-        <Text style={styles.txtSalir}>Cerrar sesion</Text>
+        <Text style={styles.txtSalir}>Cerrar sesión</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
 
-// fila de dato del perfil
 function Dato({ label, valor }) {
   return (
     <View style={styles.fila}>
@@ -90,7 +92,6 @@ function Dato({ label, valor }) {
   );
 }
 
-// colores temporales, la parte 2 los cambia por el tema
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
