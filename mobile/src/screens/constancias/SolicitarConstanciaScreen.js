@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   View,
@@ -12,6 +13,15 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { crearConstancia } from "../../services/constanciasService";
 
+// =====================================================
+// PARTE 5 - SOLICITAR CONSTANCIA
+//
+// Permite al empleado solicitar una constancia
+// laboral o salarial a Recursos Humanos.
+//
+// Compatible con el servicio actualizado de Leiva.
+// =====================================================
+
 const TIPOS_CONSTANCIA = [
   { id: "laboral", nombre: "Laboral" },
   { id: "salarial", nombre: "Salarial" },
@@ -19,19 +29,38 @@ const TIPOS_CONSTANCIA = [
 
 export default function SolicitarConstanciaScreen({ navigation }) {
   const { usuario } = useAuth();
+
   const [tipo, setTipo] = useState("laboral");
   const [destinatario, setDestinatario] = useState("");
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
 
+  // =====================================================
+  // ENVIAR SOLICITUD
+  // =====================================================
+
   const enviarSolicitud = async () => {
+    // Evitar solicitudes duplicadas mientras se procesa.
     if (enviando) return;
+
+    // Comprobar que exista una sesión activa.
+    if (!usuario?.id) {
+      Alert.alert(
+        "Sesión no disponible",
+        "Iniciá sesión para solicitar una constancia."
+      );
+      return;
+    }
 
     const destinatarioLimpio = destinatario.trim();
     const motivoLimpio = motivo.trim();
 
+    // Validar los campos obligatorios.
     if (!destinatarioLimpio || !motivoLimpio) {
-      Alert.alert("Campos obligatorios", "Completa todos los campos.");
+      Alert.alert(
+        "Campos obligatorios",
+        "Completa todos los campos."
+      );
       return;
     }
 
@@ -44,27 +73,45 @@ export default function SolicitarConstanciaScreen({ navigation }) {
     try {
       setEnviando(true);
 
-      const resultado = crearConstancia(usuario, datosSolicitud);
-      if (!resultado.ok) throw new Error(resultado.error);
+      // Crear la solicitud mediante el servicio actual.
+      const resultado = await crearConstancia(
+        usuario,
+        datosSolicitud
+      );
+
+      if (!resultado.ok) {
+        throw new Error(
+          resultado.error ||
+            "No se pudo registrar la solicitud."
+        );
+      }
 
       Alert.alert(
         "Solicitud enviada",
-        "Tu solicitud de constancia fue enviada a Recursos Humanos.",
+        "Tu solicitud de constancia fue enviada a Recursos Humanos."
       );
 
+      // Limpiar el formulario.
       setTipo("laboral");
       setDestinatario("");
       setMotivo("");
+
+      // Regresar a la pantalla anterior.
       navigation.goBack();
     } catch (error) {
       Alert.alert(
         "No se pudo enviar",
-        error?.message || "Ocurrió un problema al enviar la solicitud.",
+        error?.message ||
+          "Ocurrió un problema al enviar la solicitud."
       );
     } finally {
       setEnviando(false);
     }
   };
+
+  // =====================================================
+  // DISEÑO DEL FORMULARIO
+  // =====================================================
 
   return (
     <ScrollView
@@ -76,6 +123,7 @@ export default function SolicitarConstanciaScreen({ navigation }) {
         Humanos.
       </Text>
 
+      {/* Seleccionar el tipo de constancia */}
       <Text style={styles.etiqueta}>Tipo de constancia</Text>
 
       <View style={styles.opciones}>
@@ -87,6 +135,7 @@ export default function SolicitarConstanciaScreen({ navigation }) {
               tipo === opcion.id && styles.opcionSeleccionada,
             ]}
             onPress={() => setTipo(opcion.id)}
+            disabled={enviando}
             accessibilityRole="radio"
             accessibilityState={{
               selected: tipo === opcion.id,
@@ -104,6 +153,7 @@ export default function SolicitarConstanciaScreen({ navigation }) {
         ))}
       </View>
 
+      {/* Destinatario de la constancia */}
       <Text style={styles.etiqueta}>Dirigida a</Text>
 
       <TextInput
@@ -117,6 +167,7 @@ export default function SolicitarConstanciaScreen({ navigation }) {
         editable={!enviando}
       />
 
+      {/* Motivo de la solicitud */}
       <Text style={styles.etiqueta}>Motivo de la solicitud</Text>
 
       <TextInput
@@ -131,19 +182,29 @@ export default function SolicitarConstanciaScreen({ navigation }) {
         editable={!enviando}
       />
 
+      {/* Botón para enviar la solicitud */}
       <TouchableOpacity
-        style={[styles.boton, enviando && styles.botonDeshabilitado]}
+        style={[
+          styles.boton,
+          enviando && styles.botonDeshabilitado,
+        ]}
         onPress={enviarSolicitud}
         disabled={enviando}
         accessibilityRole="button"
       >
         <Text style={styles.textoBoton}>
-          {enviando ? "Enviando solicitud..." : "Solicitar constancia"}
+          {enviando
+            ? "Enviando solicitud..."
+            : "Solicitar constancia"}
         </Text>
       </TouchableOpacity>
     </ScrollView>
   );
 }
+
+// =====================================================
+// ESTILOS ORIGINALES DEL FORMULARIO
+// =====================================================
 
 const styles = StyleSheet.create({
   contenedor: {
