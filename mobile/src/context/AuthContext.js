@@ -7,6 +7,7 @@ import {
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
+import { escucharPermisos } from "../services/solicitudesService";
 
 const AuthContext = createContext(null);
 
@@ -50,6 +51,14 @@ export function AuthProvider({ children }) {
     });
     return cancelar;
   }, []);
+
+  useEffect(() => {
+    if (!usuario) return;
+    return escucharPermisos(usuario, () =>
+      setUsuario((u) => (u ? { ...u } : u)),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [usuario?.id]);
 
   const login = async (correo, clave) => {
     try {

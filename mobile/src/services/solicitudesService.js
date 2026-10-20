@@ -1,16 +1,41 @@
-import { usuariosMock } from "./usuariosMock";
-import { solicitudesSeed } from "./solicitudesMock";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  doc,
+  arrayUnion,
+} from "firebase/firestore";
+import { db } from "./firebase";
 import { ESTADOS, ETAPAS } from "../constants/estados";
 import { listarVacacionesEmpleado } from "./solicitudesVacacionesService";
 import { nombreFeriado } from "./vacacionesService";
 
-// Almacén en memoria: se pierde al recargar. Cuando se conecte Firestore,
-// estas funciones cambian de implementación pero no de nombre.
-let almacen = solicitudesSeed.map((s) => ({
-  ...s,
-  historial: [...s.historial],
-}));
-let contador = almacen.length;
+let almacen = [];
+const permisosRef = collection(db, "permisos");
+
+export function escucharPermisos(usuario, alCambiar) {
+  const consulta =
+    usuario.rol === "EMPLEADO"
+      ? query(permisosRef, where("empleadoUid", "==", usuario.id))
+      : permisosRef;
+  return onSnapshot(
+    consulta,
+    (snap) => {
+      almacen = snap.docs.map((d) => ({
+        id: d.id,
+        historial: [],
+        ...d.data(),
+      }));
+      alCambiar?.();
+    },
+    () => {
+      almacen = [];
+    },
+  );
+}
 
 const copia = (s) => ({ ...s, historial: s.historial.map((h) => ({ ...h })) });
 
@@ -60,16 +85,15 @@ export function validarPermiso({ empresa, motivo, fecha }) {
   return errores;
 }
 
-export function crearPermiso(usuario, datos) {
+export async function crearPermiso(usuario, datos) {
   const errores = validarPermiso(datos);
   if (Object.keys(errores).length) return { ok: false, errores };
   const choque = choquePermiso(usuario, datos.fecha);
   if (choque) return { ok: false, errores: { fecha: choque } };
-  contador += 1;
   const nueva = {
-    id: `SOL-${String(contador).padStart(3, "0")}`,
     empleadoUid: usuario.id,
-    empleadoNombre: `${usuario.nombre} ${usuario.apellido}`,
+    empleadoNombre: `${usuario.nombre} ${usuario.apellido}`.trim(),
+    jefeUid: usuario.jefeId || null,
     departamento: datos.departamento || usuario.departamento,
     empresa: datos.empresa,
     tipo: "Permiso Personal",
@@ -81,12 +105,19 @@ export function crearPermiso(usuario, datos) {
     creadaEn: new Date().toISOString(),
     historial: [],
   };
-  almacen = [...almacen, nueva];
-  return { ok: true, solicitud: copia(nueva) };
+  try {
+    const ref = await addDoc(permisosRef, nueva);
+    return { ok: true, solicitud: { id: ref.id, ...nueva } };
+  } catch {
+    return {
+      ok: false,
+      errores: { general: "No se pudo guardar, intenta de nuevo" },
+    };
+  }
 }
 
 // Para "Modificar": solo el dueño, y solo si fue rechazada. Vuelve a Pendiente; el historial se conserva.
-export function actualizarPermiso(usuario, id, datos) {
+export async function actualizarPermiso(usuario, id, datos) {
   const actual = almacen.find((s) => s.id === id);
   if (!actual || actual.empleadoUid !== usuario.id) {
     return {
@@ -114,8 +145,15 @@ export function actualizarPermiso(usuario, id, datos) {
     etapaActual: etapaInicialPara(usuario),
     motivoRechazo: null,
   };
-  almacen = almacen.map((s) => (s.id === id ? { ...s, ...cambios } : s));
-  return { ok: true, solicitud: copia({ ...actual, ...cambios }) };
+  try {
+    await updateDoc(doc(db, "permisos", id), cambios);
+    return { ok: true, solicitud: copia({ ...actual, ...cambios }) };
+  } catch {
+    return {
+      ok: false,
+      errores: { general: "No se pudo guardar, intenta de nuevo" },
+    };
+  }
 }
 
 export function listarPropias(usuario) {
@@ -130,17 +168,12 @@ export function obtener(id) {
   return encontrada ? copia(encontrada) : null;
 }
 
-// Personas cuyo jefe inmediato es este usuario
-export function equipoDe(jefe) {
-  return usuariosMock.filter((u) => u.jefeId === jefe.id).map((u) => u.id);
-}
-
 // Nadie decide sobre su propia solicitud.
 function puedeDecidirPermiso(usuario, s) {
   if (s.estado !== ESTADOS.PENDIENTE || s.empleadoUid === usuario.id)
     return false;
   if (s.etapaActual === ETAPAS.JEFE) {
-    return usuario.rol === "JEFE" && equipoDe(usuario).includes(s.empleadoUid);
+    return usuario.rol === "JEFE" && s.jefeUid === usuario.id;
   }
   if (s.etapaActual === ETAPAS.ANALISTA) {
     return usuario.rol === "ANALISTA" || usuario.rol === "GERENTE";
@@ -156,7 +189,7 @@ export function pendientesDeEquipo(jefe) {
     .sort((a, b) => a.fecha.localeCompare(b.fecha));
 }
 
-export function decidir(usuario, id, accion, motivo = "") {
+export async function decidir(usuario, id, accion, motivo = "") {
   const actual = almacen.find((s) => s.id === id);
   if (!actual) return { ok: false, error: "La solicitud no existe" };
   if (actual.estado !== ESTADOS.PENDIENTE) {
@@ -188,10 +221,13 @@ export function decidir(usuario, id, accion, motivo = "") {
       ? { etapaActual: ETAPAS.ANALISTA }
       : { estado: ESTADOS.APROBADA, etapaActual: null };
 
-  almacen = almacen.map((s) =>
-    s.id === id
-      ? { ...s, ...cambios, historial: [...s.historial, registro] }
-      : s,
-  );
-  return { ok: true };
+  try {
+    await updateDoc(doc(db, "permisos", id), {
+      ...cambios,
+      historial: arrayUnion(registro),
+    });
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "No se pudo guardar, intenta de nuevo" };
+  }
 }

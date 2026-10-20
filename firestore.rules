@@ -52,5 +52,17 @@ service cloud.firestore {
       allow update: if request.auth != null && resource.data.rolDestino == rolActual();
       allow delete: if false;
     }
+    // permisos (app móvil): el dueño ve los suyos; jefe, analista, gerente y RRHH ven todos;
+    // cada quien crea solo los suyos; el dueño corrige uno rechazado; los aprobadores deciden
+    match /permisos/{permisoId} {
+      allow read: if request.auth != null &&
+        (resource.data.empleadoUid == request.auth.uid || esRolAdministrativo());
+      allow create: if request.auth != null &&
+        request.resource.data.empleadoUid == request.auth.uid;
+      allow update: if request.auth != null &&
+        ((resource.data.empleadoUid == request.auth.uid && resource.data.estado == 'Rechazada') ||
+         esRolAdministrativo());
+      allow delete: if false;
+    }
   }
 }

@@ -31,8 +31,8 @@ export default function DetalleAprobacionScreen({ navigation, route }) {
     );
   }
 
-  const aprobar = () => {
-    const resultado = decidir(usuario, id, "Aprobado");
+  const aprobar = async () => {
+    const resultado = await decidir(usuario, id, "Aprobado");
     if (!resultado.ok) {
       setError(resultado.error);
       return;
@@ -40,8 +40,8 @@ export default function DetalleAprobacionScreen({ navigation, route }) {
     navigation.goBack();
   };
 
-  const confirmarRechazo = () => {
-    const resultado = decidir(usuario, id, "Rechazado", motivo);
+  const confirmarRechazo = async () => {
+    const resultado = await decidir(usuario, id, "Rechazado", motivo);
     if (!resultado.ok) {
       setError(resultado.error);
       return;
@@ -62,20 +62,27 @@ export default function DetalleAprobacionScreen({ navigation, route }) {
         <Text style={styles.linea}>Empleado: {solicitud.empleadoNombre}</Text>
         <Text style={styles.linea}>Departamento: {solicitud.departamento}</Text>
         <Text style={styles.linea}>Empresa: {solicitud.empresa}</Text>
-        <Text style={styles.linea}>Fecha: {formatearFecha(solicitud.fecha)}</Text>
+        <Text style={styles.linea}>
+          Fecha: {formatearFecha(solicitud.fecha)}
+        </Text>
         <Text style={styles.linea}>Motivo: {solicitud.motivo}</Text>
       </View>
 
       <Text style={styles.seccion}>Historial</Text>
       <Text style={styles.textoSecundario}>
-        Creada por {solicitud.empleadoNombre} · {formatearFechaHora(solicitud.creadaEn)}
+        Creada por {solicitud.empleadoNombre} ·{" "}
+        {formatearFechaHora(solicitud.creadaEn)}
       </Text>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       {!rechazando ? (
         <View style={styles.acciones}>
-          <CustomButton title="Aprobar" onPress={aprobar} style={styles.boton} />
+          <CustomButton
+            title="Aprobar"
+            onPress={aprobar}
+            style={styles.boton}
+          />
           <CustomButton
             title="Rechazar"
             type="secondary"
@@ -96,7 +103,10 @@ export default function DetalleAprobacionScreen({ navigation, route }) {
             <CustomButton
               title="Confirmar rechazo"
               onPress={confirmarRechazo}
-              style={[styles.boton, !motivo.trim() && styles.botonDeshabilitado]}
+              style={[
+                styles.boton,
+                !motivo.trim() && styles.botonDeshabilitado,
+              ]}
             />
             <CustomButton
               title="Cancelar"

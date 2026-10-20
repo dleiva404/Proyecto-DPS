@@ -113,8 +113,8 @@ export default function BandejaAprobacionesScreen({ navigation }) {
     ]);
   };
 
-  const confirmarPermiso = (id) => {
-    const resultado = decidirPermiso(usuario, id, "Aprobado");
+  const confirmarPermiso = async (id) => {
+    const resultado = await decidirPermiso(usuario, id, "Aprobado");
     if (!resultado.ok) {
       Alert.alert("No se pudo procesar", resultado.error);
       return;
