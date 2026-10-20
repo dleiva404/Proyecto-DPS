@@ -284,6 +284,98 @@ http://localhost:3000/api/solicitudes
 
 ---
 
+# Aplicación móvil (React Native)
+
+La carpeta `mobile/` contiene la versión móvil del sistema, desarrollada con **React Native + Expo**. Comparte el mismo proyecto de Firebase que la versión web: los usuarios inician sesión con Firebase Authentication y las solicitudes se guardan en Cloud Firestore.
+
+## Módulos de la app móvil
+
+- **Inicio de sesión** con Firebase Authentication (correo y contraseña), validación de campos y sesión persistente.
+- **Inicio:** resumen del usuario, saldo de vacaciones y notificaciones.
+- **Permisos:** solicitud, seguimiento de estado e historial. Flujo: Jefe inmediato → Analista de Nómina (el Gerente sustituye a la Analista).
+- **Vacaciones:** solicitud con cálculo de días hábiles (sin domingos ni feriados de El Salvador), saldo de 15 días por año y aprobación por etapas: Analista de Nómina → Gerente → Jefe inmediato.
+- **Constancias laborales y salariales:** solicitud, autorización por Recursos Humanos (las de RRHH las autoriza el Gerente) y descarga en PDF con código QR de verificación.
+- **Bandeja de aprobaciones:** cada rol ve solo lo que le corresponde aprobar o rechazar.
+- **Reportes** con gráfica de vacaciones por departamento.
+- **Perfil:** datos del empleado, foto de perfil y cierre de sesión.
+
+## Tecnologías de la app móvil
+
+- **React Native** con **Expo SDK 57**
+- **React Navigation** (stack y tabs)
+- **Context API** para la sesión del usuario
+- **Firebase Authentication** y **Cloud Firestore** (SDK web de Firebase)
+- **AsyncStorage** para mantener la sesión
+- **expo-print**, **expo-sharing** y **qrcode** para el PDF de constancias
+
+## Estructura
+
+```text
+mobile/
+├── App.js
+├── assets/
+└── src/
+    ├── components/   # componentes reutilizables
+    ├── constants/    # estados y etapas de aprobación
+    ├── context/      # AuthContext (sesión y escucha de datos)
+    ├── navigation/   # navegación por stacks y tabs
+    ├── screens/      # pantallas por módulo
+    ├── services/     # lógica de negocio y acceso a Firestore
+    └── theme/        # colores y estilos
+```
+
+## Colecciones de Firestore usadas por la app
+
+| Colección | Contenido |
+|---|---|
+| `usuarios` | Perfil y rol de cada usuario (compartida con la web) |
+| `permisos` | Solicitudes de permiso con su historial de aprobación |
+| `vacaciones` | Solicitudes de vacaciones con etapas y saldo |
+| `constancias` | Solicitudes de constancia y datos del documento emitido |
+
+Las reglas de seguridad están en `firestore.rules`: cada empleado solo lee sus propias solicitudes, y solo los roles aprobadores pueden cambiar su estado.
+
+## Ejecución de la app móvil
+
+### 1. Instalar dependencias
+
+```bash
+cd mobile
+npm install
+```
+
+### 2. Configurar Firebase
+
+Crear el archivo `mobile/.env.local` con las siguientes variables (los valores se comparten de forma privada, no están en el repositorio):
+
+```text
+EXPO_PUBLIC_FIREBASE_API_KEY
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
+EXPO_PUBLIC_FIREBASE_PROJECT_ID
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+EXPO_PUBLIC_FIREBASE_APP_ID
+```
+
+### 3. Iniciar la app
+
+```bash
+npx expo start -c
+```
+
+Escanear el código QR con **Expo Go** o presionar `a` para abrirla en el emulador de Android.
+
+### Usuarios de prueba
+
+Se cuenta con un usuario por rol (Empleado, Jefe inmediato, Analista de Nómina, Gerente y Asistente de Planilla/RRHH). Las credenciales se comparten en la entrega del Aula Digital.
+
+## Entregables Etapa 3 – Foro 1
+
+- **Video demostración:** _(enlace pendiente)_
+- **Documento PDF (React Native y Figma, APA 7):** _(enlace o archivo pendiente)_
+
+---
+
 ## Control de versiones
 
 El proyecto utiliza **Git y GitHub** para el control de versiones y el trabajo colaborativo.
@@ -300,13 +392,9 @@ https://github.com/dleiva404/Proyecto-DPS
 
 ## Despliegue
 
-El proyecto será desplegado mediante **Vercel**.
+La versión web del proyecto está desplegada en **Vercel** y puede consultarse en:
 
-El enlace público de producción se agregará en esta sección una vez finalizado el despliegue:
-
-```text
-URL de Vercel: Pendiente
-```
+**https://proyecto-dps-zg5u.vercel.app**
 
 ---
 
@@ -328,22 +416,26 @@ Durante el desarrollo se realizaron pruebas y capturas de los principales proces
 
 ## Integrantes
 
-- Carlos Alberto Cornejo Calderón
-- David Antonio Leiva Martínez
-- Moisés David García Casco
-- Alcyr Alexander Figueroa Landaverde
-- Nelson Mauricio Solano Guardado
+| Integrante | Carné |
+|---|---|
+| Carlos Alberto Cornejo Calderón | CC251978 |
+| David Antonio Leiva Martínez | LM160828 |
+| Moisés David García Casco | GC251462 |
+| Alcyr Alexander Figueroa Landaverde | FL253210 |
+| Nelson Mauricio Solano Guardado | SG240238 |
 
 ---
 
 ## Asignatura
 
-**DPS941 – Desarrollo de aplicaciones**
+**DPS941 – Diseño y Programación de Software Multiplataforma**
 
-**Etapa 2 – Desarrollo Base del Proyecto Web**
+**Etapa 3 – Aplicación móvil (React Native) y Firebase**
 
 ---
 
 ## Estado del proyecto
 
 Proyecto desarrollado como parte de la **Fase 2**, incluyendo la estructura base de la aplicación web, autenticación, roles, módulos principales, integración con servicios, API REST, manejo de datos, documentación y preparación para despliegue.
+
+En la Etapa 3 se incorporó la aplicación móvil en React Native con Firebase Authentication y Cloud Firestore.
