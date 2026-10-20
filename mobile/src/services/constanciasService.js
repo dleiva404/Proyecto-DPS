@@ -1,7 +1,34 @@
 import { generarConstancia } from "../screens/constancias/generarConstancia";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
+import { db } from "./firebase";
 
 let almacen = [];
-let contador = 0;
+const constanciasRef = collection(db, "constancias");
+
+export function escucharConstancias(usuario, alCambiar) {
+  const consulta =
+    usuario.rol === "EMPLEADO"
+      ? query(constanciasRef, where("empleadoUid", "==", usuario.id))
+      : constanciasRef;
+  return onSnapshot(
+    consulta,
+    (snap) => {
+      almacen = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      alCambiar?.();
+    },
+    () => {
+      almacen = [];
+    },
+  );
+}
 
 const copia = (c) => ({ ...c });
 
@@ -12,13 +39,12 @@ const nuevoCodigo = () =>
     .slice(-4)
     .toUpperCase()}`;
 
-export function crearConstancia(usuario, { tipo, destinatario, motivo }) {
+export async function crearConstancia(usuario, { tipo, destinatario, motivo }) {
   if (!destinatario?.trim() || !motivo?.trim()) {
     return { ok: false, error: "Completa todos los campos." };
   }
-  contador += 1;
+
   const nueva = {
-    id: `CON-${String(contador).padStart(3, "0")}`,
     empleadoUid: usuario.id,
     empleado: `${usuario.nombre} ${usuario.apellido}`,
     empleadoRol: usuario.rol,
@@ -34,8 +60,12 @@ export function crearConstancia(usuario, { tipo, destinatario, motivo }) {
     observacion: "",
     creadaEn: new Date().toISOString(),
   };
-  almacen = [...almacen, nueva];
-  return { ok: true, constancia: copia(nueva) };
+  try {
+    const ref = await addDoc(constanciasRef, nueva);
+    return { ok: true, constancia: { id: ref.id, ...nueva } };
+  } catch {
+    return { ok: false, error: "No se pudo guardar, intenta de nuevo." };
+  }
 }
 
 export function listarConstanciasPropias(usuario) {
@@ -63,7 +93,12 @@ export function obtenerConstancia(id) {
   return encontrada ? copia(encontrada) : null;
 }
 
-export function resolverConstancia(usuario, id, decision, observacion = "") {
+export async function resolverConstancia(
+  usuario,
+  id,
+  decision,
+  observacion = "",
+) {
   const actual = almacen.find((c) => c.id === id);
   if (!actual) return { ok: false, error: "La constancia no existe." };
   if (!puedeAutorizar(usuario, actual)) {
@@ -91,6 +126,10 @@ export function resolverConstancia(usuario, id, decision, observacion = "") {
     }
   }
 
-  almacen = almacen.map((c) => (c.id === id ? { ...c, ...cambios } : c));
-  return { ok: true, constancia: obtenerConstancia(id) };
+  try {
+    await updateDoc(doc(db, "constancias", id), cambios);
+  } catch {
+    return { ok: false, error: "No se pudo guardar, intenta de nuevo." };
+  }
+  return { ok: true, constancia: { ...actual, ...cambios } };
 }

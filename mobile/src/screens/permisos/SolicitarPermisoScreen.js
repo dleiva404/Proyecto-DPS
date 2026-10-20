@@ -36,11 +36,11 @@ export default function SolicitarPermisoScreen({ navigation, route }) {
 
   const nombreEmpleado = `${usuario.nombre} ${usuario.apellido}`;
 
-  const enviar = () => {
+  const enviar = async () => {
     const datos = { empresa, departamento, motivo, fecha };
     const resultado = existente
-      ? actualizarPermiso(usuario, existente.id, datos)
-      : crearPermiso(usuario, datos);
+      ? await actualizarPermiso(usuario, existente.id, datos)
+      : await crearPermiso(usuario, datos);
 
     if (!resultado.ok) {
       setErrores(resultado.errores);

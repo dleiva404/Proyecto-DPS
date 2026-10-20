@@ -5,10 +5,42 @@ import {
   obtenerSaldo,
   DIAS_ANUALES,
 } from "./vacacionesService";
-import { usuariosMock } from "./usuariosMock";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  doc,
+  arrayUnion,
+} from "firebase/firestore";
+import { db } from "./firebase";
 
+// Copia local de la colección "vacaciones"; onSnapshot la mantiene al día
 let solicitudesVacaciones = [];
-let contador = 1;
+const vacacionesRef = collection(db, "vacaciones");
+
+export function escucharVacaciones(usuario, alCambiar) {
+  const consulta =
+    usuario.rol === "EMPLEADO"
+      ? query(vacacionesRef, where("empleadoUid", "==", usuario.id))
+      : vacacionesRef;
+  return onSnapshot(
+    consulta,
+    (snap) => {
+      solicitudesVacaciones = snap.docs.map((d) => ({
+        id: d.id,
+        historial: [],
+        ...d.data(),
+      }));
+      alCambiar?.();
+    },
+    () => {
+      solicitudesVacaciones = [];
+    },
+  );
+}
 
 function copiarSolicitud(solicitud) {
   return {
@@ -29,8 +61,7 @@ function puedeDecidirVacacion(usuario, s) {
     return false;
   }
   if (usuario.rol === "JEFE") {
-    const empleado = usuariosMock.find((u) => u.id === s.empleadoUid);
-    return empleado?.jefeId === usuario.id;
+    return s.jefeUid === usuario.id;
   }
   return true;
 }
@@ -82,7 +113,7 @@ export function obtenerResumenSaldo(usuario, hoy = new Date()) {
     disponible: Math.max(0, DIAS_ANUALES - aprobados - enTramite),
   };
 }
-export function crearSolicitudVacaciones(usuario, datos, permisos = []) {
+export async function crearSolicitudVacaciones(usuario, datos, permisos = []) {
   if (!usuario?.id) {
     return {
       ok: false,
@@ -113,7 +144,7 @@ export function crearSolicitudVacaciones(usuario, datos, permisos = []) {
     return {
       ok: false,
       errores: {
-        fechas: `Esas fechas se cruzan con tu solicitud ${traslape.id} (${traslape.fechaInicio} al ${traslape.fechaFin}).`,
+        fechas: `Esas fechas se cruzan con tu solicitud del ${traslape.fechaInicio} al ${traslape.fechaFin}.`,
       },
     };
   }
@@ -128,7 +159,7 @@ export function crearSolicitudVacaciones(usuario, datos, permisos = []) {
     return {
       ok: false,
       errores: {
-        fechas: `Ya tienes el permiso ${permisoEnRango.id} el ${permisoEnRango.fecha}, dentro de esas fechas.`,
+        fechas: `Ya tienes un permiso el ${permisoEnRango.fecha}, dentro de esas fechas.`,
       },
     };
   }
@@ -136,9 +167,9 @@ export function crearSolicitudVacaciones(usuario, datos, permisos = []) {
   const diasSolicitados = contarDiasHabiles(datos.fechaInicio, datos.fechaFin);
   const etapas = etapasPara(usuario);
   const solicitud = {
-    id: `VAC-${String(contador++).padStart(3, "0")}`,
     empleadoUid: usuario.id,
-    empleadoNombre: `${usuario.nombre} ${usuario.apellido}`,
+    empleadoNombre: `${usuario.nombre} ${usuario.apellido}`.trim(),
+    jefeUid: usuario.jefeId || null,
     departamento: usuario.departamento,
     empresa: usuario.empresa,
     tipo: "Vacaciones",
@@ -154,12 +185,15 @@ export function crearSolicitudVacaciones(usuario, datos, permisos = []) {
     historial: [],
   };
 
-  solicitudesVacaciones = [...solicitudesVacaciones, solicitud];
-
-  return {
-    ok: true,
-    solicitud: copiarSolicitud(solicitud),
-  };
+  try {
+    const ref = await addDoc(vacacionesRef, solicitud);
+    return { ok: true, solicitud: { id: ref.id, ...solicitud } };
+  } catch {
+    return {
+      ok: false,
+      errores: { general: "No se pudo guardar, intenta de nuevo" },
+    };
+  }
 }
 
 export function listarVacacionesEmpleado(empleadoUid) {
@@ -193,7 +227,12 @@ export function obtenerSolicitudVacaciones(id) {
   return solicitud ? copiarSolicitud(solicitud) : null;
 }
 
-export function decidirSolicitudVacaciones(id, usuario, decision, motivo = "") {
+export async function decidirSolicitudVacaciones(
+  id,
+  usuario,
+  decision,
+  motivo = "",
+) {
   const rol = usuario?.rol;
   const indice = solicitudesVacaciones.findIndex((s) => s.id === id);
 
@@ -224,16 +263,13 @@ export function decidirSolicitudVacaciones(id, usuario, decision, motivo = "") {
     };
   }
 
-  const historial = [
-    ...solicitud.historial,
-    {
-      rol,
-      decision,
-      responsable: `${usuario.nombre} ${usuario.apellido}`,
-      motivo: motivo.trim(),
-      fecha: new Date().toISOString(),
-    },
-  ];
+  const registro = {
+    rol,
+    decision,
+    responsable: `${usuario.nombre} ${usuario.apellido}`.trim(),
+    motivo: motivo.trim(),
+    fecha: new Date().toISOString(),
+  };
 
   let estado = "Pendiente";
   let etapaActual = rol;
@@ -259,10 +295,19 @@ export function decidirSolicitudVacaciones(id, usuario, decision, motivo = "") {
     estado,
     etapaActual,
     motivoRechazo,
-    historial,
+    historial: [...solicitud.historial, registro],
   };
 
-  solicitudesVacaciones[indice] = actualizada;
+  try {
+    await updateDoc(doc(db, "vacaciones", id), {
+      estado,
+      etapaActual,
+      motivoRechazo,
+      historial: arrayUnion(registro),
+    });
+  } catch {
+    return { ok: false, mensaje: "No se pudo guardar, intenta de nuevo" };
+  }
 
   return {
     ok: true,
