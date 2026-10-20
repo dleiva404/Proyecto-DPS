@@ -9,6 +9,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 import { escucharPermisos } from "../services/solicitudesService";
 import { escucharVacaciones } from "../services/solicitudesVacacionesService";
+import { escucharConstancias } from "../services/constanciasService";
 
 const AuthContext = createContext(null);
 
@@ -58,9 +59,11 @@ export function AuthProvider({ children }) {
     const refrescar = () => setUsuario((u) => (u ? { ...u } : u));
     const dejarPermisos = escucharPermisos(usuario, refrescar);
     const dejarVacaciones = escucharVacaciones(usuario, refrescar);
+    const dejarConstancias = escucharConstancias(usuario, refrescar);
     return () => {
       dejarPermisos();
       dejarVacaciones();
+      dejarConstancias();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario?.id]);

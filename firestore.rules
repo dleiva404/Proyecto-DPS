@@ -74,5 +74,16 @@ service cloud.firestore {
       allow update: if esRolAdministrativo();
       allow delete: if false;
     }
+    // constancias (app móvil): el dueño ve las suyas; el personal administrativo ve todas;
+    // cada quien crea solo las suyas; solo RRHH (AsistentePlanilla) y el Gerente autorizan
+    match /constancias/{constanciaId} {
+      allow read: if request.auth != null &&
+        (resource.data.empleadoUid == request.auth.uid || esRolAdministrativo());
+      allow create: if request.auth != null &&
+        request.resource.data.empleadoUid == request.auth.uid;
+      allow update: if request.auth != null &&
+        rolActual() in ['AsistentePlanilla', 'Gerente'];
+      allow delete: if false;
+    }
   }
 }
