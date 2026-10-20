@@ -73,8 +73,8 @@ export default function BandejaAprobacionesScreen({ navigation }) {
         {
           text: decision,
           style: decision === "Rechazar" ? "destructive" : "default",
-          onPress: () => {
-            const resultado = decidirSolicitudVacaciones(
+          onPress: async () => {
+            const resultado = await decidirSolicitudVacaciones(
               solicitud.id,
               usuario,
               decision,

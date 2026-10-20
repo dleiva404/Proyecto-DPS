@@ -40,13 +40,13 @@ export default function SolicitarVacacionesScreen({ navigation }) {
     saldoDisponible: saldo,
   });
 
-  const enviarSolicitud = () => {
+  const enviarSolicitud = async () => {
     if (Object.keys(errores).length > 0) {
       Alert.alert("Revisa tu solicitud", Object.values(errores).join("\n"));
       return;
     }
 
-    const resultado = crearSolicitudVacaciones(
+    const resultado = await crearSolicitudVacaciones(
       usuario,
       { fechaInicio, fechaFin, motivo },
       listarPropias(usuario),

@@ -64,5 +64,15 @@ service cloud.firestore {
          esRolAdministrativo());
       allow delete: if false;
     }
+    // vacaciones (app móvil): el dueño ve las suyas; los aprobadores ven todas;
+    // cada quien crea solo las suyas; solo jefe, analista, gerente y RRHH deciden
+    match /vacaciones/{vacacionId} {
+      allow read: if request.auth != null &&
+        (resource.data.empleadoUid == request.auth.uid || esRolAdministrativo());
+      allow create: if request.auth != null &&
+        request.resource.data.empleadoUid == request.auth.uid;
+      allow update: if esRolAdministrativo();
+      allow delete: if false;
+    }
   }
 }

@@ -8,6 +8,7 @@ import {
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 import { escucharPermisos } from "../services/solicitudesService";
+import { escucharVacaciones } from "../services/solicitudesVacacionesService";
 
 const AuthContext = createContext(null);
 
@@ -54,9 +55,13 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!usuario) return;
-    return escucharPermisos(usuario, () =>
-      setUsuario((u) => (u ? { ...u } : u)),
-    );
+    const refrescar = () => setUsuario((u) => (u ? { ...u } : u));
+    const dejarPermisos = escucharPermisos(usuario, refrescar);
+    const dejarVacaciones = escucharVacaciones(usuario, refrescar);
+    return () => {
+      dejarPermisos();
+      dejarVacaciones();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario?.id]);
 
