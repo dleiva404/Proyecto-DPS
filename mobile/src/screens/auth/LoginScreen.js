@@ -37,11 +37,11 @@ export default function LoginScreen() {
     return Object.keys(e).length === 0;
   };
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     setErrorGeneral("");
     if (!validar()) return;
 
-    const res = await login(correo, clave);
+    const res = login(correo, clave);
     if (!res.ok) setErrorGeneral(res.mensaje);
   };
 
