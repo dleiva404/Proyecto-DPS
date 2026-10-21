@@ -371,8 +371,8 @@ Se cuenta con un usuario por rol (Empleado, Jefe inmediato, Analista de Nómina,
 
 ## Entregables Etapa 3 – Foro 1
 
-- **Video demostración:** _(enlace pendiente)_
-- **Documento PDF (React Native y Figma, APA 7):** _(enlace o archivo pendiente)_
+- **Video demostración:** https://drive.google.com/drive/folders/1DbgbkyPI9ZTNIT2oh0_X41rJKuArx49Z 
+- **Documento PDF (React Native y Figma, APA 7):** https://drive.google.com/file/d/1UCqTUzMywc-y3VXIusq6Jic6vm_lez1V/view?usp=sharing
 
 ---
 
