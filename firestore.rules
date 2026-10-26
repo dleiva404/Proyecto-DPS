@@ -15,14 +15,21 @@ service cloud.firestore {
 
     // usuarios/{uid}: cada quien lee su propio documento;
     // AdminTI y AsistentePlanilla pueden leer a todos (consulta);
-    // solo AdminTI puede crear o editar; nadie puede eliminar (se desactiva con "activo")
+    // solo AdminTI puede crear; nadie puede eliminar;
+    // AdminTI puede actualizar todo, el usuario solo puede actualizar su foto y notificaciones.
     match /usuarios/{uid} {
       allow read: if request.auth != null &&
         (request.auth.uid == uid ||
          rolActual() == 'AdminTI' ||
          rolActual() == 'AsistentePlanilla');
       allow create: if request.auth != null && rolActual() == 'AdminTI';
-      allow update: if request.auth != null && rolActual() == 'AdminTI' && request.auth.uid != uid;
+      
+      // REGLA CORREGIDA PARA EL CODE REVIEW
+      allow update: if request.auth != null && (
+        (rolActual() == 'AdminTI') || 
+        (request.auth.uid == uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fotoUrl', 'notificacionesLeidas']))
+      );
+      
       allow delete: if false;
     }
 
