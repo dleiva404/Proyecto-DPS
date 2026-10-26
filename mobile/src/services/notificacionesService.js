@@ -55,7 +55,6 @@ const fechaDe = (s) =>
 export function listarNotificaciones(usuario) {
   if (!usuario) return [];
   const lista = [];
-
   const porRevisar = contarPorRevisar(usuario);
   if (porRevisar.total > 0) {
     const partes = [

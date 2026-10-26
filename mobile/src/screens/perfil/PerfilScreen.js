@@ -44,7 +44,6 @@ export default function PerfilScreen() {
           xhr.send(null);
         });
 
-        // CORRECCIÓN DAVID: Solo usar usuario.id para no chocar con Firebase
         const idUsuario = usuario.id; 
         const storageRef = ref(storage, `fotos_perfil/${idUsuario}.jpg`);
 
@@ -102,7 +101,6 @@ export default function PerfilScreen() {
         <Dato label="Puesto" valor={usuario.puesto} />
         <Dato label="Departamento" valor={usuario.departamento} />
         <Dato label="Empresa" valor={usuario.empresa} />
-        {/* CORRECCIÓN DAVID: Volver al formatearFecha */}
         <Dato
           label="Fecha de ingreso"
           valor={usuario.fechaIngreso ? formatearFecha(usuario.fechaIngreso) : "No registrada"}

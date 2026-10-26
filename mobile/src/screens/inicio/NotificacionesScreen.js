@@ -21,7 +21,7 @@ import {
 } from "../../services/notificacionesService";
 
 export default function NotificacionesScreen({ onBack }) {
-  const { usuario } = useAuth();
+  const { usuario, actualizarNotificacionesLeidas } = useAuth();
   const userRole = usuario?.rol || usuario?.role || "empleado";
   const userName = usuario?.nombre || usuario?.correo || "Colaborador";
 
@@ -40,13 +40,14 @@ export default function NotificacionesScreen({ onBack }) {
     return () => sub.remove();
   }, [onBack]);
 
-
   const marcarTodasLeidas = async () => {
     await marcarLeidasServicio(usuario);
+    const todosIds = notificaciones.map((n) => n.id);
+    const nuevasLeidas = Array.from(new Set([...(usuario?.notificacionesLeidas || []), ...todosIds]));
+    actualizarNotificacionesLeidas(nuevasLeidas);
     setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
   };
 
-  // CORRECCIÓN DAVID: Actualiza el perfil del usuario, no la colección independiente
   const marcarNotificacionLeida = async (id, yaEstaLeida) => {
     if (yaEstaLeida || !usuario?.id) return; 
 
@@ -55,6 +56,9 @@ export default function NotificacionesScreen({ onBack }) {
       await updateDoc(userRef, { 
         notificacionesLeidas: arrayUnion(id) 
       });
+
+      const nuevasLeidas = [...(usuario.notificacionesLeidas || []), id];
+      actualizarNotificacionesLeidas(nuevasLeidas);
 
       setNotificaciones((prev) =>
         prev.map((notif) =>

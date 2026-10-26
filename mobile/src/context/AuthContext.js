@@ -36,6 +36,7 @@ const cargarPerfil = async (uid) => {
     apellido: d.apellido || "",
     jefeId: d.jefeId || null,
     fotoUrl: d.fotoUrl || null,
+    notificacionesLeidas: d.notificacionesLeidas || [],
   };
 };
 
@@ -65,7 +66,6 @@ export function AuthProvider({ children }) {
       dejarVacaciones();
       dejarConstancias();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario?.id]);
 
   const login = async (correo, clave) => {
@@ -95,6 +95,10 @@ export function AuthProvider({ children }) {
     setUsuario((prev) => ({ ...prev, fotoUrl: uri }));
   };
 
+  const actualizarNotificacionesLeidas = (nuevasLeidas) => {
+    setUsuario((prev) => ({ ...prev, notificacionesLeidas: nuevasLeidas }));
+  };
+
   if (cargando) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -103,7 +107,7 @@ export function AuthProvider({ children }) {
     );
   }
   return (
-    <AuthContext.Provider value={{ usuario, login, logout, actualizarFoto }}>
+    <AuthContext.Provider value={{ usuario, login, logout, actualizarFoto, actualizarNotificacionesLeidas }}>
       {children}
     </AuthContext.Provider>
   );
