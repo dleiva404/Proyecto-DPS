@@ -1,16 +1,11 @@
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-} from "react-native";
+import React from "react";
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, ScrollView } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../context/AuthContext";
 import { NOMBRE_ROL } from "../../constants/roles";
-import { formatearFecha } from "../../services/formato";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { doc, updateDoc } from "firebase/firestore";
+import { db, storage } from "../../services/firebase"; 
 
 export default function PerfilScreen() {
   const { usuario, logout, actualizarFoto } = useAuth();
@@ -18,22 +13,55 @@ export default function PerfilScreen() {
   const cambiarFoto = async () => {
     const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permiso.granted) {
-      Alert.alert(
-        "Permiso requerido",
-        "Necesitamos acceso a la galería para cambiar la foto",
-      );
+      Alert.alert("Permiso requerido", "Necesitamos acceso a la galería.");
       return;
     }
 
     const resultado = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
+      mediaTypes: ["images"], 
+      allowsEditing: true,    
       aspect: [1, 1],
-      quality: 0.7,
+      quality: 0.7,           
     });
 
     if (!resultado.canceled) {
-      actualizarFoto(resultado.assets[0].uri);
+      try {
+        Alert.alert("Subiendo...", "Un momento por favor.");
+        
+        const uri = resultado.assets[0].uri;
+        
+        const blob = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.onload = function () {
+            resolve(xhr.response);
+          };
+          xhr.onerror = function (e) {
+            reject(new TypeError("Fallo al crear el archivo local"));
+          };
+          xhr.responseType = "blob";
+          xhr.open("GET", uri, true);
+          xhr.send(null);
+        });
+
+        const idUsuario = usuario.id || usuario.correo; 
+        const storageRef = ref(storage, `fotos_perfil/${idUsuario}.jpg`);
+
+        await uploadBytes(storageRef, blob);
+        
+        blob.close();
+
+        const downloadURL = await getDownloadURL(storageRef);
+
+        const userRef = doc(db, "usuarios", idUsuario);
+        await updateDoc(userRef, { fotoUrl: downloadURL });
+
+        actualizarFoto(downloadURL);
+        Alert.alert("¡Listo!", "Tu foto de perfil se actualizó correctamente.");
+
+      } catch (error) {
+        console.error(error);
+        Alert.alert("Error", "No se pudo subir la foto.");
+      }
     }
   };
 
@@ -44,16 +72,18 @@ export default function PerfilScreen() {
     ]);
   };
 
-  const iniciales = `${usuario.nombre[0]}${usuario.apellido[0]}`;
+  const iniciales = usuario?.nombre && usuario?.apellido 
+    ? `${usuario.nombre[0]}${usuario.apellido[0]}` 
+    : "US";
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <TouchableOpacity onPress={cambiarFoto}>
         {usuario.fotoUrl ? (
-          <Image source={{ uri: usuario.fotoUrl }} style={styles.foto} />
+          <Image key={usuario.fotoUrl} source={{ uri: usuario.fotoUrl }} style={styles.foto} />
         ) : (
           <View style={[styles.foto, styles.sinFoto]}>
-            <Text style={styles.iniciales}>{iniciales}</Text>
+            <Text style={styles.iniciales}>{iniciales.toUpperCase()}</Text>
           </View>
         )}
         <Text style={styles.cambiar}>Cambiar foto</Text>
@@ -72,7 +102,7 @@ export default function PerfilScreen() {
         <Dato label="Empresa" valor={usuario.empresa} />
         <Dato
           label="Fecha de ingreso"
-          valor={formatearFecha(usuario.fechaIngreso)}
+          valor={usuario.fechaIngreso ? String(usuario.fechaIngreso) : "No registrada"}
         />
       </View>
 
@@ -93,57 +123,17 @@ function Dato({ label, valor }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    padding: 24,
-    paddingTop: 60,
-    backgroundColor: "#fff",
-    flexGrow: 1,
-  },
-  foto: { width: 110, height: 110, borderRadius: 55 },
-  sinFoto: {
-    backgroundColor: "#1e3a8a",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { alignItems: "center", padding: 24, paddingTop: 60, backgroundColor: "#fff", flexGrow: 1 },
+  foto: { width: 110, height: 110, borderRadius: 55, backgroundColor: "#e5e7eb" },
+  sinFoto: { backgroundColor: "#1e3a8a", justifyContent: "center", alignItems: "center" },
   iniciales: { color: "#fff", fontSize: 36, fontWeight: "bold" },
-  cambiar: {
-    color: "#1e3a8a",
-    textAlign: "center",
-    marginTop: 8,
-    fontWeight: "600",
-  },
+  cambiar: { color: "#1e3a8a", textAlign: "center", marginTop: 8, fontWeight: "600" },
   nombre: { fontSize: 22, fontWeight: "bold", marginTop: 16 },
   rol: { fontSize: 14, color: "#6b7280", marginBottom: 24 },
-  tarjeta: {
-    width: "100%",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-  },
-  fila: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f3f4f6",
-  },
+  tarjeta: { width: "100%", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 12, paddingHorizontal: 16 },
+  fila: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
   label: { color: "#6b7280" },
-  valor: {
-    fontWeight: "600",
-    flexShrink: 1,
-    textAlign: "right",
-    marginLeft: 12,
-  },
-  btnSalir: {
-    marginTop: 32,
-    borderWidth: 1,
-    borderColor: "#dc2626",
-    borderRadius: 8,
-    paddingVertical: 12,
-    width: "100%",
-    alignItems: "center",
-  },
+  valor: { fontWeight: "600", flexShrink: 1, textAlign: "right", marginLeft: 12 },
+  btnSalir: { marginTop: 32, borderWidth: 1, borderColor: "#dc2626", borderRadius: 8, paddingVertical: 12, width: "100%", alignItems: "center" },
   txtSalir: { color: "#dc2626", fontWeight: "bold" },
 });

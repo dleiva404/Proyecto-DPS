@@ -12,6 +12,9 @@ import CustomCard from "../../components/CustomCard";
 import StatusBadge from "../../components/StatusBadge";
 import CustomButton from "../../components/CustomButton";
 import { useAuth } from "../../context/AuthContext";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "../../services/firebase"; 
+
 import {
   listarNotificaciones,
   marcarTodasLeidas as marcarLeidasServicio,
@@ -42,6 +45,24 @@ export default function NotificacionesScreen({ onBack }) {
     setNotificaciones(listarNotificaciones(usuario));
   };
 
+  // Actualiza el estado en Firestore
+  const marcarNotificacionLeida = async (id, yaEstaLeida) => {
+    if (yaEstaLeida) return; 
+
+    try {
+      const notificacionRef = doc(db, "notificaciones", id); 
+      await updateDoc(notificacionRef, { leida: true });
+
+      setNotificaciones((prev) =>
+        prev.map((notif) =>
+          notif.id === id ? { ...notif, leida: true } : notif
+        )
+      );
+    } catch (error) {
+      console.error("Error al marcar la notificación como leída en Firestore:", error);
+    }
+  };
+
   const noLeidas = notificaciones.filter((n) => !n.leida).length;
 
   return (
@@ -56,7 +77,7 @@ export default function NotificacionesScreen({ onBack }) {
           <View style={{ flex: 1 }}>
             <Text style={styles.screenTitle}>Notificaciones</Text>
             <Text style={styles.subtitle}>
-              {userName} • {userRole.toUpperCase()}
+              {userName} - {userRole.toUpperCase()}
             </Text>
           </View>
         </View>
@@ -80,23 +101,28 @@ export default function NotificacionesScreen({ onBack }) {
       )}
 
       {notificaciones.map((item) => (
-        <CustomCard
-          key={item.id}
-          title={item.titulo}
-          description={item.descripcion}
-          icon={item.icono}
-          iconColor={item.colorIcono}
-          iconBg={item.bgIcono}
-          accentColor={!item.leida ? "#2563EB" : "#CBD5E1"}
+        <TouchableOpacity 
+          key={item.id} 
+          activeOpacity={0.8}
+          onPress={() => marcarNotificacionLeida(item.id, item.leida)}
         >
-          <View style={styles.cardFooter}>
-            <View style={styles.dateRow}>
-              <Ionicons name="time-outline" size={14} color="#64748B" />
-              <Text style={styles.dateText}>{item.fecha}</Text>
+          <CustomCard
+            title={item.titulo}
+            description={item.descripcion}
+            icon={item.icono}
+            iconColor={item.colorIcono}
+            iconBg={item.bgIcono}
+            accentColor={!item.leida ? "#2563EB" : "#CBD5E1"}
+          >
+            <View style={styles.cardFooter}>
+              <View style={styles.dateRow}>
+                <Ionicons name="time-outline" size={14} color="#64748B" />
+                <Text style={styles.dateText}>{item.fecha}</Text>
+              </View>
+              <StatusBadge label={item.estado} status={item.estado} />
             </View>
-            <StatusBadge label={item.estado} status={item.estado} />
-          </View>
-        </CustomCard>
+          </CustomCard>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
