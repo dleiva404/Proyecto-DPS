@@ -12,7 +12,7 @@ import CustomCard from "../../components/CustomCard";
 import StatusBadge from "../../components/StatusBadge";
 import CustomButton from "../../components/CustomButton";
 import { useAuth } from "../../context/AuthContext";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../../services/firebase"; 
 
 import {
@@ -40,18 +40,21 @@ export default function NotificacionesScreen({ onBack }) {
     return () => sub.remove();
   }, [onBack]);
 
-  const marcarTodasLeidas = () => {
-    marcarLeidasServicio(usuario);
-    setNotificaciones(listarNotificaciones(usuario));
+
+  const marcarTodasLeidas = async () => {
+    await marcarLeidasServicio(usuario);
+    setNotificaciones((prev) => prev.map((n) => ({ ...n, leida: true })));
   };
 
-  // Actualiza el estado en Firestore
+  // CORRECCIÓN DAVID: Actualiza el perfil del usuario, no la colección independiente
   const marcarNotificacionLeida = async (id, yaEstaLeida) => {
-    if (yaEstaLeida) return; 
+    if (yaEstaLeida || !usuario?.id) return; 
 
     try {
-      const notificacionRef = doc(db, "notificaciones", id); 
-      await updateDoc(notificacionRef, { leida: true });
+      const userRef = doc(db, "usuarios", usuario.id); 
+      await updateDoc(userRef, { 
+        notificacionesLeidas: arrayUnion(id) 
+      });
 
       setNotificaciones((prev) =>
         prev.map((notif) =>
@@ -59,7 +62,7 @@ export default function NotificacionesScreen({ onBack }) {
         )
       );
     } catch (error) {
-      console.error("Error al marcar la notificación como leída en Firestore:", error);
+      console.error("Error al guardar la notificación leída:", error);
     }
   };
 
@@ -129,71 +132,16 @@ export default function NotificacionesScreen({ onBack }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  topBar: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 8,
-  },
-  backBtn: {
-    padding: 8,
-    backgroundColor: "#F1F5F9",
-    borderRadius: 10,
-    marginRight: 12,
-  },
-  screenTitle: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#1E293B",
-  },
-  subtitle: {
-    fontSize: 12,
-    color: "#64748B",
-    marginTop: 2,
-  },
-  markReadBtn: {
-    marginBottom: 16,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#F1F5F9",
-  },
-  dateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  dateText: {
-    fontSize: 12,
-    color: "#64748B",
-    marginLeft: 4,
-  },
-  vacio: {
-    textAlign: "center",
-    color: "#64748B",
-    marginTop: 30,
-  },
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  content: { padding: 20, paddingBottom: 40 },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16, backgroundColor: "#FFFFFF", padding: 16, borderRadius: 16, borderWidth: 1, borderColor: "#E2E8F0" },
+  titleRow: { flexDirection: "row", alignItems: "center", flex: 1, marginRight: 8 },
+  backBtn: { padding: 8, backgroundColor: "#F1F5F9", borderRadius: 10, marginRight: 12 },
+  screenTitle: { fontSize: 17, fontWeight: "bold", color: "#1E293B" },
+  subtitle: { fontSize: 12, color: "#64748B", marginTop: 2 },
+  markReadBtn: { marginBottom: 16 },
+  cardFooter: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTopWidth: 1, borderTopColor: "#F1F5F9" },
+  dateRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+  dateText: { fontSize: 12, color: "#64748B", marginLeft: 4 },
+  vacio: { textAlign: "center", color: "#64748B", marginTop: 30 },
 });

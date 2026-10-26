@@ -6,6 +6,7 @@ import { NOMBRE_ROL } from "../../constants/roles";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { doc, updateDoc } from "firebase/firestore";
 import { db, storage } from "../../services/firebase"; 
+import { formatearFecha } from "../../services/formato"; 
 
 export default function PerfilScreen() {
   const { usuario, logout, actualizarFoto } = useAuth();
@@ -43,7 +44,8 @@ export default function PerfilScreen() {
           xhr.send(null);
         });
 
-        const idUsuario = usuario.id || usuario.correo; 
+        // CORRECCIÓN DAVID: Solo usar usuario.id para no chocar con Firebase
+        const idUsuario = usuario.id; 
         const storageRef = ref(storage, `fotos_perfil/${idUsuario}.jpg`);
 
         await uploadBytes(storageRef, blob);
@@ -100,9 +102,10 @@ export default function PerfilScreen() {
         <Dato label="Puesto" valor={usuario.puesto} />
         <Dato label="Departamento" valor={usuario.departamento} />
         <Dato label="Empresa" valor={usuario.empresa} />
+        {/* CORRECCIÓN DAVID: Volver al formatearFecha */}
         <Dato
           label="Fecha de ingreso"
-          valor={usuario.fechaIngreso ? String(usuario.fechaIngreso) : "No registrada"}
+          valor={usuario.fechaIngreso ? formatearFecha(usuario.fechaIngreso) : "No registrada"}
         />
       </View>
 

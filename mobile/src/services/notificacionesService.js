@@ -8,8 +8,8 @@ import {
   listarConstanciasPendientes,
 } from "./constanciasService";
 import { formatearFecha } from "./formato";
-
-const leidas = new Set();
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "./firebase"; 
 
 const ESTILO = {
   Aprobada: {
@@ -49,14 +49,13 @@ const fechaDe = (s) =>
   formatearFecha(
     s.historial?.[s.historial.length - 1]?.fecha ||
       s.fechaEmision ||
-      s.creadaEn,
+      s.creadaEn
   );
 
 export function listarNotificaciones(usuario) {
   if (!usuario) return [];
   const lista = [];
 
-  // 1) Lo que le toca revisar
   const porRevisar = contarPorRevisar(usuario);
   if (porRevisar.total > 0) {
     const partes = [
@@ -99,7 +98,7 @@ export function listarNotificaciones(usuario) {
         id: `${s.id}-${s.estado}`,
         titulo: `Tu solicitud de ${s.nombre} fue ${aprobada ? "aprobada" : "rechazada"}`,
         descripcion:
-          `${s.id} ${s.detalle}.` +
+          `${s.detalle.charAt(0).toUpperCase() + s.detalle.slice(1)}.` +
           (aprobada
             ? s.nombre === "constancia"
               ? " Ya puedes descargarla en PDF."
@@ -110,13 +109,29 @@ export function listarNotificaciones(usuario) {
       });
     });
 
-  return lista.map((n) => ({ ...n, leida: leidas.has(n.id) }));
+
+  const leidasFirebase = usuario.notificacionesLeidas || [];
+  return lista.map((n) => ({ ...n, leida: leidasFirebase.includes(n.id) }));
 }
 
 export function contarNoLeidas(usuario) {
   return listarNotificaciones(usuario).filter((n) => !n.leida).length;
 }
 
-export function marcarTodasLeidas(usuario) {
-  listarNotificaciones(usuario).forEach((n) => leidas.add(n.id));
+export async function marcarTodasLeidas(usuario) {
+  if (!usuario || !usuario.id) return;
+  
+  const notificaciones = listarNotificaciones(usuario);
+  const idsNoLeidos = notificaciones.filter((n) => !n.leida).map((n) => n.id);
+  
+  if (idsNoLeidos.length > 0) {
+    try {
+      const userRef = doc(db, "usuarios", usuario.id);
+      await updateDoc(userRef, {
+        notificacionesLeidas: arrayUnion(...idsNoLeidos)
+      });
+    } catch (error) {
+      console.error("Error al guardar notificaciones leídas:", error);
+    }
+  }
 }
