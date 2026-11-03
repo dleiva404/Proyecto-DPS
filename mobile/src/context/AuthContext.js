@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
 import {
   signInWithEmailAndPassword,
+  signInWithCredential,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
 } from "firebase/auth";
@@ -10,6 +12,17 @@ import { auth, db } from "../services/firebase";
 import { escucharPermisos } from "../services/solicitudesService";
 import { escucharVacaciones } from "../services/solicitudesVacacionesService";
 import { escucharConstancias } from "../services/constanciasService";
+import {
+  GoogleSignin,
+  isSuccessResponse,
+  isErrorWithCode,
+  statusCodes,
+} from "@react-native-google-signin/google-signin";
+
+// el webClientId es el "ID de cliente web" del proveedor Google en Firebase
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+});
 
 const AuthContext = createContext(null);
 
@@ -89,7 +102,50 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = () => signOut(auth);
+  const loginGoogle = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const respuesta = await GoogleSignin.signIn();
+      if (!isSuccessResponse(respuesta)) {
+        return { ok: false, cancelado: true };
+      }
+      const credencial = GoogleAuthProvider.credential(respuesta.data.idToken);
+      const cred = await signInWithCredential(auth, credencial);
+      const perfil = await cargarPerfil(cred.user.uid);
+      if (!perfil) {
+        await signOut(auth);
+        await GoogleSignin.signOut();
+        return {
+          ok: false,
+          mensaje: "Esta cuenta de Google no está registrada en el sistema",
+        };
+      }
+      setUsuario(perfil);
+      return { ok: true };
+    } catch (e) {
+      if (isErrorWithCode(e) && e.code === statusCodes.IN_PROGRESS) {
+        return { ok: false, cancelado: true };
+      }
+      if (
+        isErrorWithCode(e) &&
+        e.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE
+      ) {
+        return {
+          ok: false,
+          mensaje: "Google Play Services no está disponible",
+        };
+      }
+      if (e.code === "auth/network-request-failed") {
+        return { ok: false, mensaje: "Sin conexión a internet" };
+      }
+      return { ok: false, mensaje: "No se pudo iniciar sesión con Google" };
+    }
+  };
+
+  const logout = async () => {
+    await GoogleSignin.signOut().catch(() => {});
+    await signOut(auth);
+  };
 
   const actualizarFoto = (uri) => {
     setUsuario((prev) => ({ ...prev, fotoUrl: uri }));
@@ -107,10 +163,13 @@ export function AuthProvider({ children }) {
     );
   }
   return (
-    <AuthContext.Provider value={{ usuario, login, logout, actualizarFoto, actualizarNotificacionesLeidas }}>
+    <AuthContext.Provider
+      value={{ usuario, login, loginGoogle, logout, actualizarFoto }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
+
 
 export const useAuth = () => useContext(AuthContext);
