@@ -164,7 +164,7 @@ export function AuthProvider({ children }) {
   }
   return (
     <AuthContext.Provider
-      value={{ usuario, login, loginGoogle, logout, actualizarFoto }}
+      value={{ usuario, login, loginGoogle, logout, actualizarFoto, actualizarNotificacionesLeidas }}
     >
       {children}
     </AuthContext.Provider>
