@@ -17,12 +17,13 @@ import CustomButton from "../../components/CustomButton";
 const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login, loginGoogle } = useAuth();
   const [correo, setCorreo] = useState("");
   const [clave, setClave] = useState("");
   const [verClave, setVerClave] = useState(false);
   const [errores, setErrores] = useState({});
   const [errorGeneral, setErrorGeneral] = useState("");
+  const [cargandoGoogle, setCargandoGoogle] = useState(false);
 
   const validar = () => {
     const e = {};
@@ -43,6 +44,15 @@ export default function LoginScreen() {
 
     const res = await login(correo, clave);
     if (!res.ok) setErrorGeneral(res.mensaje);
+  };
+
+  const handleGoogle = async () => {
+    setErrorGeneral("");
+    setCargandoGoogle(true);
+    const res = await loginGoogle();
+    setCargandoGoogle(false);
+    // si el usuario cerró la ventana de Google no se muestra error
+    if (!res.ok && !res.cancelado) setErrorGeneral(res.mensaje);
   };
 
   return (
@@ -111,6 +121,24 @@ export default function LoginScreen() {
           onPress={handleLogin}
           style={styles.boton}
         />
+
+        <View style={styles.separador}>
+          <View style={styles.linea} />
+          <Text style={styles.textoSeparador}>o</Text>
+          <View style={styles.linea} />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.botonGoogle, cargandoGoogle && { opacity: 0.6 }]}
+          onPress={handleGoogle}
+          disabled={cargandoGoogle}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="logo-google" size={20} color="#2563EB" />
+          <Text style={styles.textoGoogle}>
+            {cargandoGoogle ? "Conectando..." : "Continuar con Google"}
+          </Text>
+        </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
@@ -196,5 +224,28 @@ const styles = StyleSheet.create({
     marginTop: 32,
     paddingVertical: 15,
     borderRadius: 12,
+  },
+  separador: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  linea: { flex: 1, height: 1, backgroundColor: "#E2E8F0" },
+  textoSeparador: { marginHorizontal: 12, color: "#94A3B8", fontSize: 13 },
+  botonGoogle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderRadius: 12,
+    paddingVertical: 14,
+    backgroundColor: "#FFFFFF",
+  },
+  textoGoogle: {
+    marginLeft: 10,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1E293B",
   },
 });
