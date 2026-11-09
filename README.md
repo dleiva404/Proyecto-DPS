@@ -374,6 +374,11 @@ Se cuenta con un usuario por rol (Empleado, Jefe inmediato, Analista de Nómina,
 - **Video demostración:** https://drive.google.com/drive/folders/1DbgbkyPI9ZTNIT2oh0_X41rJKuArx49Z 
 - **Documento PDF (React Native y Figma, APA 7):** https://drive.google.com/file/d/1UCqTUzMywc-y3VXIusq6Jic6vm_lez1V/view?usp=sharing
 
+## Entregables Etapa 3 – Foro 2
+
+- **Video demostración:** https://udbedu-my.sharepoint.com/:v:/g/personal/lm160828_alumno_udb_edu_sv/IQBp7BPRQN38SoDZoXkgB1sUAb9Q41WNoOcqzxdxEs8UZ9M?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=ao5htV
+- **Documento PDF:** https://udbedu-my.sharepoint.com/:b:/g/personal/lm160828_alumno_udb_edu_sv/IQAtjL9AR2bmTavY2PpwErR-AW3pwvgS7P2fVjJJPQ5Q-So?e=P9pNvs
+
 ---
 
 ## Control de versiones
