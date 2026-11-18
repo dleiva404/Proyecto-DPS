@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { auth } from "@/lib/firebase";
 
 type Solicitud = {
   id: string;
-  empleadoId?: string;
+  empleado?: string;
   tipo?: string;
   fechaHorario?: string;
   empresa?: string;
@@ -27,10 +28,13 @@ export default function IntegracionApiPage() {
       setCargando(true);
       setError(null);
 
+      await auth.authStateReady();
+      const token = await auth.currentUser?.getIdToken();
       const respuesta = await fetch("/api/solicitudes", {
         method: "GET",
         headers: {
           Accept: "application/json",
+          Authorization: `Bearer ${token ?? ""}`,
         },
         cache: "no-store",
       });
@@ -129,7 +133,7 @@ export default function IntegracionApiPage() {
                   {solicitudes.map((solicitud) => (
                     <tr key={solicitud.id} className="border-b">
                       <td className="p-3">{solicitud.id}</td>
-                      <td className="p-3">{solicitud.empleadoId ?? "-"}</td>
+                      <td className="p-3">{solicitud.empleado ?? "-"}</td>
                       <td className="p-3">{solicitud.tipo ?? "-"}</td>
                       <td className="p-3">
                         {solicitud.fechaHorario ?? "-"}
