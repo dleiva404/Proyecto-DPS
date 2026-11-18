@@ -1,7 +1,7 @@
 const DIAS_POR_ANIO = 15;
 const MESES_VIGENCIA = 12;
 
-// Cuenta los días hábiles (lunes a viernes) entre dos fechas.
+// Cuenta los días hábiles (lunes a sábado) entre dos fechas.
 
 export function contarDiasHabiles(
   fechaInicio: string,
@@ -17,7 +17,7 @@ export function contarDiasHabiles(
 
   while (actual <= fin) {
     const diaSemana = actual.getDay();
-    if (diaSemana !== 0 && diaSemana !== 6) {
+    if (diaSemana !== 0) {
       dias++;
     }
     actual.setDate(actual.getDate() + 1);
