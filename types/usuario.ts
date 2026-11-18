@@ -20,4 +20,9 @@ export interface UsuarioSistema {
   creadoPor: string; // uid del AdminTI que creó la cuenta
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  apellido?: string;
+  jefeId?: string | null;
+  departamento?: string;
+  empresa?: string;
+  fechaIngreso?: string;
 }

@@ -1,98 +1,145 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  Check,
-  X,
-  Eye,
-  Pencil,
-  Trash2,
-  CalendarDays,
-  Plus,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Check, X, Eye, CalendarDays, Plus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { solicitudesMock } from "@/mocks/solicitudes";
-import { empleadosMock } from "@/mocks/empleados";
 import { contarDiasHabiles } from "@/services/vacacionesService";
 import {
-  puedeActuar,
-  avanzarSolicitud,
   etiquetaEtapa,
-  etapaInicial,
   type RolAprobador,
 } from "@/services/aprobacionesService";
 import { crearNotificacion } from "@/services/notificacionesService";
-import type { Solicitud } from "@/types/solicitud";
+import {
+  escucharPermisos,
+  crearPermiso,
+  puedeDecidirPermiso,
+  decidirPermiso,
+} from "@/services/permisosService";
+import {
+  escucharVacaciones,
+  crearVacaciones,
+  puedeDecidirVacacion,
+  decidirVacacion,
+  saldoDisponible,
+} from "@/services/vacacionesFirestoreService";
+import type {
+  Etapa,
+  EstadoSolicitud,
+  Permiso,
+  Vacacion,
+} from "@/types/solicitudesFirestore";
 
-const ROLES_CON_ACCESO_WEB: RolAprobador[] = [
-  "AnalistaNomina",
-  "Gerente",
-  "JefeInmediato",
-];
+const ROL_DE_ETAPA: Record<Etapa, RolAprobador> = {
+  JEFE: "JefeInmediato",
+  ANALISTA: "AnalistaNomina",
+  GERENTE: "Gerente",
+};
+
+// Fila de la tabla: permisos y vacaciones juntos
+interface Fila {
+  id: string;
+  origen: "permiso" | "vacacion";
+  empleadoNombre: string;
+  departamento: string;
+  tipo: string;
+  fechaHorario: string;
+  empresa: string;
+  estado: EstadoSolicitud;
+  etapaActual: Etapa | null;
+  motivo: string;
+  creadaEn: string;
+  datos: Permiso | Vacacion;
+}
 
 export default function SolicitudesPage() {
   const { usuario } = useAuth();
 
-  const rolActual: RolAprobador | null =
-    usuario && ROLES_CON_ACCESO_WEB.includes(usuario.rol as RolAprobador)
-      ? (usuario.rol as RolAprobador)
-      : null;
-  const [solicitudes, setSolicitudes] = useState<Solicitud[]>(solicitudesMock);
+  const [permisos, setPermisos] = useState<Permiso[]>([]);
+  const [vacaciones, setVacaciones] = useState<Vacacion[]>([]);
   const [categoria, setCategoria] = useState("Todos");
   const [empresa, setEmpresa] = useState("Todas");
   const [departamento, setDepartamento] = useState("Todos");
   const [fecha, setFecha] = useState("");
   const [modal, setModal] = useState(false);
-  const [editando, setEditando] = useState<Solicitud | null>(null);
   const [analistaDisponible, setAnalistaDisponible] = useState(true);
 
-  const [form, setForm] = useState<{
-    empleadoId: string;
-    tipo: string;
-    fechaHorario: string;
-    empresa: string;
-    estado: "Pendiente" | "Aprobada" | "Rechazada";
-  }>({
-    empleadoId: "E001",
+  const [form, setForm] = useState({
     tipo: "Permiso Personal",
-    fechaHorario: "",
     empresa: "Didelco",
-    estado: "Pendiente",
+    motivo: "",
   });
 
   const [fechaPermiso, setFechaPermiso] = useState("");
-  const [horaInicio, setHoraInicio] = useState("");
-  const [horaFin, setHoraFin] = useState("");
   const [fechaInicioVac, setFechaInicioVac] = useState("");
   const [fechaFinVac, setFechaFinVac] = useState("");
-  const [tipoConstancia, setTipoConstancia] = useState("Constancia de trabajo");
 
-  const empleados = useMemo(
-    () => Object.fromEntries(empleadosMock.map((e) => [e.empleadoId, e])),
-    [],
+  useEffect(() => {
+    if (!usuario) return;
+    const cancelarPermisos = escucharPermisos(usuario, setPermisos);
+    const cancelarVacaciones = escucharVacaciones(usuario, setVacaciones);
+    return () => {
+      cancelarPermisos();
+      cancelarVacaciones();
+    };
+  }, [usuario]);
+
+  const solicitudes = useMemo<Fila[]>(
+    () =>
+      [
+        ...permisos.map((p) => ({
+          id: p.id,
+          origen: "permiso" as const,
+          empleadoNombre: p.empleadoNombre,
+          departamento: p.departamento,
+          tipo: p.tipo,
+          fechaHorario: p.fecha,
+          empresa: p.empresa,
+          estado: p.estado,
+          etapaActual: p.etapaActual,
+          motivo: p.motivo,
+          creadaEn: p.creadaEn ?? "",
+          datos: p,
+        })),
+        ...vacaciones.map((v) => ({
+          id: v.id,
+          origen: "vacacion" as const,
+          empleadoNombre: v.empleadoNombre,
+          departamento: v.departamento,
+          tipo: v.tipo,
+          fechaHorario: `${v.fechaInicio} - ${v.fechaFin}`,
+          empresa: v.empresa,
+          estado: v.estado,
+          etapaActual: v.etapaActual,
+          motivo: v.motivo,
+          creadaEn: v.creadaEn ?? "",
+          datos: v,
+        })),
+      ].sort((a, b) => b.creadaEn.localeCompare(a.creadaEn)),
+    [permisos, vacaciones],
+  );
+
+  const departamentos = useMemo(
+    () => [...new Set(solicitudes.map((s) => s.departamento).filter(Boolean))],
+    [solicitudes],
   );
 
   const solicitudesFiltradas = useMemo(
     () =>
       solicitudes.filter((s) => {
-        const e = empleados[s.empleadoId];
-        if (!e) return false;
-
         const tipoOK =
           categoria === "Todos" ||
-          (categoria === "Permisos" && s.tipo.includes("Permiso")) ||
-          (categoria === "Vacaciones" && s.tipo === "Vacaciones") ||
-          (categoria === "Constancias" && s.tipo.includes("Constancia"));
+          (categoria === "Permisos" && s.origen === "permiso") ||
+          (categoria === "Vacaciones" && s.origen === "vacacion");
 
         const empresaOK = empresa === "Todas" || s.empresa === empresa;
         const deptoOK =
-          departamento === "Todos" || e.departamentoId === departamento;
+          departamento === "Todos" || s.departamento === departamento;
 
         const fechaOK = !fecha || s.fechaHorario.includes(fecha);
 
         return tipoOK && empresaOK && deptoOK && fechaOK;
       }),
-    [solicitudes, categoria, empresa, departamento, fecha, empleados],
+    [solicitudes, categoria, empresa, departamento, fecha],
   );
 
   const categorias = [
@@ -103,150 +150,106 @@ export default function SolicitudesPage() {
     },
     {
       nombre: "Permisos",
-      cantidad: solicitudes.filter((s) => s.tipo.includes("Permiso")).length,
+      cantidad: permisos.length,
       badge: "bg-orange-100 text-orange-500",
     },
     {
       nombre: "Vacaciones",
-      cantidad: solicitudes.filter((s) => s.tipo === "Vacaciones").length,
+      cantidad: vacaciones.length,
       badge: "bg-red-100 text-red-500",
-    },
-    {
-      nombre: "Constancias",
-      cantidad: solicitudes.filter((s) => s.tipo.includes("Constancia")).length,
-      badge: "bg-green-100 text-green-500",
     },
   ];
 
-  const nombreEmpleado = (id: string) => {
-    const e = empleados[id];
-    return e
-      ? `${e.nombres} ${e.apellidoPaterno} ${e.apellidoMaterno}`
-      : "Empleado desconocido";
-  };
-
   const resetCamposPorTipo = () => {
     setFechaPermiso("");
-    setHoraInicio("");
-    setHoraFin("");
     setFechaInicioVac("");
     setFechaFinVac("");
-    setTipoConstancia("Constancia de trabajo");
   };
 
   const abrirNuevo = () => {
-    setEditando(null);
     setForm({
-      empleadoId: "E001",
       tipo: "Permiso Personal",
-      fechaHorario: "",
-      empresa: "Didelco",
-      estado: "Pendiente",
+      empresa: usuario?.empresa || "Didelco",
+      motivo: "",
     });
     resetCamposPorTipo();
     setModal(true);
   };
 
-  const abrirEditar = (solicitud: Solicitud) => {
-    setEditando(solicitud);
-    setForm({
-      empleadoId: solicitud.empleadoId,
-      tipo: solicitud.tipo,
-      fechaHorario: solicitud.fechaHorario,
-      empresa: solicitud.empresa,
-      estado: solicitud.estado,
-    });
-
-    resetCamposPorTipo();
-    setModal(true);
+  const notificar = async (
+    etapa: Etapa | null | undefined,
+    mensaje: string,
+    id: string,
+  ) => {
+    if (!etapa) return;
+    try {
+      await crearNotificacion(ROL_DE_ETAPA[etapa], mensaje, id);
+    } catch (error) {
+      console.error("No se pudo crear la notificación:", error);
+    }
   };
 
   const guardarSolicitud = async () => {
-    if (!form.fechaHorario.trim()) {
-      alert("Ingresa la fecha de la solicitud.");
-      return;
-    }
-
-    if (editando) {
-      setSolicitudes((actuales) =>
-        actuales.map((s) => (s.id === editando.id ? { ...s, ...form } : s)),
+    if (!usuario) return;
+    try {
+      const nueva =
+        form.tipo === "Vacaciones"
+          ? await crearVacaciones(
+              usuario,
+              {
+                fechaInicio: fechaInicioVac,
+                fechaFin: fechaFinVac,
+                motivo: form.motivo,
+              },
+              vacaciones,
+            )
+          : await crearPermiso(usuario, {
+              fecha: fechaPermiso,
+              motivo: form.motivo,
+              empresa: form.empresa,
+            });
+      await notificar(
+        nueva.etapaActual,
+        `Nueva solicitud de ${form.tipo} pendiente de revisión`,
+        nueva.id,
       );
-    } else {
-      const etapa = etapaInicial(form.tipo);
-      const nueva: Solicitud = {
-        id: Date.now().toString(),
-        ...form,
-        etapaActual: etapa,
-        historial: [],
-      };
-
-      setSolicitudes((actuales) => [...actuales, nueva]);
-
-      if (etapa) {
-        try {
-          await crearNotificacion(
-            etapa,
-            `Nueva solicitud de ${form.tipo} pendiente de revisión`,
-            nueva.id,
-          );
-        } catch (error) {
-          console.error("No se pudo crear la notificación:", error);
-        }
-      }
+      setModal(false);
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "No se pudo guardar la solicitud.",
+      );
     }
-
-    setModal(false);
-    setEditando(null);
   };
 
-  const eliminar = (id: string) => {
-    if (!confirm("¿Seguro que deseas eliminar esta solicitud?")) return;
-    setSolicitudes((actuales) => actuales.filter((s) => s.id !== id));
-  };
-
-  const tieneFlujo = (tipo: string) =>
-    tipo === "Vacaciones" || tipo.toLowerCase().includes("permiso");
+  const puedeDecidir = (s: Fila) =>
+    !!usuario &&
+    (s.origen === "permiso"
+      ? puedeDecidirPermiso(usuario, s.datos as Permiso, analistaDisponible)
+      : puedeDecidirVacacion(usuario, s.datos as Vacacion));
 
   const actuarSobreSolicitud = async (
-    solicitud: Solicitud,
+    s: Fila,
     accion: "Aprobado" | "Rechazado",
   ) => {
-    if (!tieneFlujo(solicitud.tipo)) {
-      setSolicitudes((actuales) =>
-        actuales.map((s) =>
-          s.id === solicitud.id
-            ? { ...s, estado: accion === "Aprobado" ? "Aprobada" : "Rechazada" }
-            : s,
-        ),
-      );
-      return;
-    }
-
-    if (!rolActual) {
-      alert("Tu rol no puede aprobar ni rechazar solicitudes.");
-      return;
+    if (!usuario) return;
+    let motivo = "";
+    if (accion === "Rechazado") {
+      motivo = prompt("Motivo del rechazo:")?.trim() ?? "";
+      if (!motivo) return;
     }
 
     try {
-      const actualizada = avanzarSolicitud(
-        solicitud as Parameters<typeof avanzarSolicitud>[0],
-        accion,
-        rolActual,
-        analistaDisponible,
+      const siguiente =
+        s.origen === "permiso"
+          ? await decidirPermiso(usuario, s.datos as Permiso, accion, motivo)
+          : await decidirVacacion(usuario, s.datos as Vacacion, accion, motivo);
+      await notificar(
+        siguiente,
+        `Tienes una solicitud de ${s.tipo} pendiente de tu revisión`,
+        s.id,
       );
-      setSolicitudes((actuales) =>
-        actuales.map((s) =>
-          s.id === solicitud.id ? { ...s, ...actualizada } : s,
-        ),
-      );
-
-      if (actualizada.etapaActual) {
-        await crearNotificacion(
-          actualizada.etapaActual,
-          `Tienes una solicitud de ${solicitud.tipo} pendiente de tu revisión`,
-          solicitud.id,
-        );
-      }
     } catch (error) {
       alert(
         error instanceof Error
@@ -256,9 +259,12 @@ export default function SolicitudesPage() {
     }
   };
 
-  const verSolicitud = (s: Solicitud) => {
+  const verSolicitud = (s: Fila) => {
     alert(
-      `Solicitud\n\nEmpleado: ${nombreEmpleado(s.empleadoId)}\nTipo: ${s.tipo}\nFecha: ${s.fechaHorario}\nEmpresa: ${s.empresa}\nEstado: ${s.estado}`,
+      `Solicitud\n\nEmpleado: ${s.empleadoNombre}\nTipo: ${s.tipo}\nFecha: ${s.fechaHorario}\nEmpresa: ${s.empresa}\nMotivo: ${s.motivo}\nEstado: ${s.estado}` +
+        (s.datos.motivoRechazo
+          ? `\nMotivo del rechazo: ${s.datos.motivoRechazo}`
+          : ""),
     );
   };
 
@@ -284,7 +290,7 @@ export default function SolicitudesPage() {
         </button>
       </div>
 
-      {rolActual === "Gerente" && (
+      {usuario?.rol === "Gerente" && (
         <div className="flex items-center gap-3 mb-6 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
           <label className="flex items-center gap-2 text-xs font-semibold text-amber-800">
             <input
@@ -299,7 +305,7 @@ export default function SolicitudesPage() {
       )}
 
       {/* Categorías */}
-      <div className="grid grid-cols-4 gap-5 mb-6">
+      <div className="grid grid-cols-3 gap-5 mb-6">
         {categorias.map((item) => {
           const activa = categoria === item.nombre;
 
@@ -343,11 +349,9 @@ export default function SolicitudesPage() {
           className="w-44 h-10 px-4 rounded-lg border border-slate-300 bg-white text-sm text-slate-900"
         >
           <option value="Todos">Todos</option>
-          <option value="01">Depto 01</option>
-          <option value="02">Depto 02</option>
-          <option value="03">Depto 03</option>
-          <option value="04">Depto 04</option>
-          <option value="05">Depto 05</option>
+          {departamentos.map((d) => (
+            <option key={d}>{d}</option>
+          ))}
         </select>
 
         <div className="relative">
@@ -399,18 +403,7 @@ export default function SolicitudesPage() {
                 </tr>
               ) : (
                 solicitudesFiltradas.map((s) => {
-                  const e = empleados[s.empleadoId];
-                  const conFlujo = tieneFlujo(s.tipo);
-                  const puedeAprobar =
-                    s.estado === "Pendiente" &&
-                    (!conFlujo ||
-                      (rolActual !== null &&
-                        puedeActuar(
-                          s.tipo,
-                          rolActual,
-                          s.etapaActual ?? null,
-                          analistaDisponible,
-                        )));
+                  const puedeAprobar = puedeDecidir(s);
 
                   return (
                     <tr
@@ -419,10 +412,10 @@ export default function SolicitudesPage() {
                     >
                       <td className="px-6 py-5">
                         <p className="text-sm font-semibold text-slate-900">
-                          {nombreEmpleado(s.empleadoId)}
+                          {s.empleadoNombre}
                         </p>
                         <p className="text-xs text-slate-500 mt-1">
-                          Depto {e?.departamentoId}
+                          {s.departamento}
                         </p>
                       </td>
 
@@ -447,9 +440,10 @@ export default function SolicitudesPage() {
                               : "text-red-600"
                         }`}
                       >
-                        {conFlujo
-                          ? etiquetaEtapa(s.etapaActual ?? null, s.estado)
-                          : s.estado}
+                        {etiquetaEtapa(
+                          s.etapaActual ? ROL_DE_ETAPA[s.etapaActual] : null,
+                          s.estado,
+                        )}
                       </td>
 
                       <td className="px-6 py-5">
@@ -478,22 +472,6 @@ export default function SolicitudesPage() {
                             className="w-6 h-6 border border-red-500 text-red-500 rounded-md flex items-center justify-center hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed"
                           >
                             <X className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            title="Editar"
-                            onClick={() => abrirEditar(s)}
-                            className="text-blue-500 hover:text-blue-600"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-
-                          <button
-                            title="Eliminar"
-                            onClick={() => eliminar(s.id)}
-                            className="text-red-500 hover:text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4" />
                           </button>
 
                           <button
@@ -534,7 +512,7 @@ export default function SolicitudesPage() {
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-xl p-6">
             <div className="flex justify-between items-center mb-5">
               <h2 className="text-xl font-bold text-slate-900">
-                {editando ? "Editar Solicitud" : "Nueva Solicitud"}
+                Nueva Solicitud
               </h2>
 
               <button
@@ -548,100 +526,34 @@ export default function SolicitudesPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">
-                  Empleado
-                </label>
-                <select
-                  value={form.empleadoId}
-                  onChange={(e) =>
-                    setForm({ ...form, empleadoId: e.target.value })
-                  }
-                  className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
-                >
-                  {empleadosMock.map((e) => (
-                    <option key={e.empleadoId} value={e.empleadoId}>
-                      {e.nombres} {e.apellidoPaterno} {e.apellidoMaterno}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">
                   Tipo de solicitud
                 </label>
                 <select
                   value={form.tipo}
                   onChange={(e) => {
-                    setForm({
-                      ...form,
-                      tipo: e.target.value,
-                      fechaHorario: "",
-                    });
+                    setForm({ ...form, tipo: e.target.value });
                     resetCamposPorTipo();
                   }}
                   className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
                 >
                   <option>Permiso Personal</option>
                   <option>Vacaciones</option>
-                  <option>Constancia Laboral</option>
                 </select>
               </div>
 
               {/* Campos específicos por tipo de solicitud */}
               {form.tipo === "Permiso Personal" && (
-                <>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">
-                      Fecha
-                    </label>
-                    <input
-                      type="date"
-                      value={fechaPermiso}
-                      onChange={(e) => {
-                        setFechaPermiso(e.target.value);
-                        setForm({
-                          ...form,
-                          fechaHorario:
-                            `${e.target.value} ${horaInicio} - ${horaFin}`.trim(),
-                        });
-                      }}
-                      className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">
-                      Horario
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="time"
-                        value={horaInicio}
-                        onChange={(e) => {
-                          setHoraInicio(e.target.value);
-                          setForm({
-                            ...form,
-                            fechaHorario:
-                              `${fechaPermiso} ${e.target.value} - ${horaFin}`.trim(),
-                          });
-                        }}
-                        className="w-1/2 p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
-                      />
-                      <input
-                        type="time"
-                        value={horaFin}
-                        onChange={(e) => {
-                          setHoraFin(e.target.value);
-                          setForm({
-                            ...form,
-                            fechaHorario:
-                              `${fechaPermiso} ${horaInicio} - ${e.target.value}`.trim(),
-                          });
-                        }}
-                        className="w-1/2 p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
-                      />
-                    </div>
-                  </div>
-                </>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    Fecha
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaPermiso}
+                    onChange={(e) => setFechaPermiso(e.target.value)}
+                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
+                  />
+                </div>
               )}
 
               {form.tipo === "Vacaciones" && (
@@ -653,14 +565,7 @@ export default function SolicitudesPage() {
                     <input
                       type="date"
                       value={fechaInicioVac}
-                      onChange={(e) => {
-                        setFechaInicioVac(e.target.value);
-                        setForm({
-                          ...form,
-                          fechaHorario:
-                            `${e.target.value} - ${fechaFinVac}`.trim(),
-                        });
-                      }}
+                      onChange={(e) => setFechaInicioVac(e.target.value)}
                       className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
                     />
                   </div>
@@ -671,17 +576,16 @@ export default function SolicitudesPage() {
                     <input
                       type="date"
                       value={fechaFinVac}
-                      onChange={(e) => {
-                        setFechaFinVac(e.target.value);
-                        setForm({
-                          ...form,
-                          fechaHorario:
-                            `${fechaInicioVac} - ${e.target.value}`.trim(),
-                        });
-                      }}
+                      onChange={(e) => setFechaFinVac(e.target.value)}
                       className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
                     />
                   </div>
+                  {usuario && (
+                    <p className="text-xs text-slate-500">
+                      Saldo disponible: {saldoDisponible(usuario, vacaciones)}{" "}
+                      días
+                    </p>
+                  )}
                   {fechaInicioVac && fechaFinVac && (
                     <p className="text-xs text-slate-500">
                       {contarDiasHabiles(fechaInicioVac, fechaFinVac)} días
@@ -691,63 +595,33 @@ export default function SolicitudesPage() {
                 </>
               )}
 
-              {form.tipo === "Constancia Laboral" && (
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Tipo de constancia
-                  </label>
-                  <select
-                    value={tipoConstancia}
-                    onChange={(e) => {
-                      setTipoConstancia(e.target.value);
-                      setForm({ ...form, fechaHorario: e.target.value });
-                    }}
-                    className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
-                  >
-                    <option>Constancia laboral</option>
-                    <option>Constancia salarial</option>
-                  </select>
-                </div>
-              )}
-
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-1">
-                  Empresa
+                  Motivo
                 </label>
-                <select
-                  value={form.empresa}
-                  onChange={(e) =>
-                    setForm({ ...form, empresa: e.target.value })
-                  }
+                <textarea
+                  value={form.motivo}
+                  onChange={(e) => setForm({ ...form, motivo: e.target.value })}
+                  rows={3}
                   className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
-                >
-                  <option>Didelco</option>
-                  <option>Steel</option>
-                  <option>EFL</option>
-                </select>
+                />
               </div>
 
-              {editando && (
+              {form.tipo === "Permiso Personal" && (
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">
-                    Estado
+                    Empresa
                   </label>
                   <select
-                    value={form.estado}
+                    value={form.empresa}
                     onChange={(e) =>
-                      setForm({
-                        ...form,
-                        estado: e.target.value as
-                          | "Pendiente"
-                          | "Aprobada"
-                          | "Rechazada",
-                      })
+                      setForm({ ...form, empresa: e.target.value })
                     }
                     className="w-full p-2.5 border border-slate-300 rounded-lg text-sm text-slate-900"
                   >
-                    <option>Pendiente</option>
-                    <option>Aprobada</option>
-                    <option>Rechazada</option>
+                    <option>Didelco</option>
+                    <option>Steel</option>
+                    <option>EFL</option>
                   </select>
                 </div>
               )}
@@ -765,7 +639,7 @@ export default function SolicitudesPage() {
                 onClick={guardarSolicitud}
                 className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold"
               >
-                {editando ? "Guardar cambios" : "Crear solicitud"}
+                Crear solicitud
               </button>
             </div>
           </div>
