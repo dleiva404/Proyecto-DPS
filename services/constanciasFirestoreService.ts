@@ -9,6 +9,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { UsuarioSistema } from "@/types/usuario";
+import { calcularTiempoServicio } from "./constanciasServices";
 
 export type TipoConstancia = "laboral" | "salarial";
 export type EstadoConstancia = "Pendiente" | "Aprobada" | "Rechazada";
@@ -33,6 +34,7 @@ export interface ConstanciaFirestore {
   autorizadoRol?: string;
   codigo?: string;
   fechaEmision?: string;
+  antiguedad?: string | null;
 }
 
 const constanciasRef = collection(db, "constancias");
@@ -140,7 +142,9 @@ export async function resolverConstancia(
     cambios.autorizadoRol =
       usuario.rol === "AsistentePlanilla" ? "RRHH" : "Gerente";
     cambios.codigo = nuevoCodigo();
-    cambios.fechaEmision = new Date().toISOString();
+    cambios.fechaEmision = new Date().toLocaleDateString("en-CA");
+    cambios.antiguedad = c.fechaIngreso ? calcularTiempoServicio(c.fechaIngreso) : null;
+    
   }
 
   await updateDoc(doc(db, "constancias", c.id), cambios);
