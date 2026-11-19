@@ -19,7 +19,7 @@ export async function subirFotoPerfil(
   }
 
   // Se guarda en una ruta fija por usuario para reemplazar la foto anterior sin acumular archivos
-  const storageRef = ref(storage, `fotos_perfil/${uid}.jpg `);
+  const storageRef = ref(storage, `fotos_perfil/${uid}.jpg`);
   await uploadBytes(storageRef, archivo, {
     contentType: archivo.type,
   });
