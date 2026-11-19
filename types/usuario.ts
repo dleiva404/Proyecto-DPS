@@ -25,4 +25,7 @@ export interface UsuarioSistema {
   departamento?: string;
   empresa?: string;
   fechaIngreso?: string;
+  puesto?: string;
+  salario?: number | null;
+  fotoUrl?: string | null;
 }

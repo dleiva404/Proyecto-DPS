@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Search, Bell } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Search, Bell, Camera, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
   escucharNotificacionesNoLeidas,
   marcarComoLeida,
   type Notificacion,
 } from "@/services/notificacionesService";
+import { subirFotoPerfil } from "@/services/perfilService";
 
-// Primeras letras de las dos primeras palabras del nombre ("Carlos Calderón" -> "CC")
 function obtenerIniciales(nombre?: string): string {
   const palabras = nombre?.trim().split(/\s+/).filter(Boolean) ?? [];
   return (
@@ -25,6 +25,9 @@ export default function Header() {
   const { usuario } = useAuth();
   const [notificaciones, setNotificaciones] = useState<Notificacion[]>([]);
   const [panelAbierto, setPanelAbierto] = useState(false);
+  const [subiendoFoto, setSubiendoFoto] = useState(false);
+  const [fotoLocal, setFotoLocal] = useState<string | null>(null);
+  const inputArchivoRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!usuario?.rol) return;
@@ -38,6 +41,30 @@ export default function Header() {
   const abrirNotificacion = async (n: Notificacion) => {
     await marcarComoLeida(n.id);
   };
+
+  const handleSeleccionarFoto = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const archivo = e.target.files?.[0];
+    if (!archivo || !usuario?.uid) return;
+
+    setSubiendoFoto(true);
+    try {
+      const nuevaUrl = await subirFotoPerfil(usuario.uid, archivo);
+      setFotoLocal(nuevaUrl);
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "No se pudo subir la foto de perfil.",
+      );
+    } finally {
+      setSubiendoFoto(false);
+      e.target.value = "";
+    }
+  };
+
+  const fotoActual = fotoLocal || usuario?.fotoUrl;
 
   return (
     <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-10 shadow-sm">
@@ -114,9 +141,40 @@ export default function Header() {
             </p>
             <p className="text-xs text-slate-400">{usuario?.rol ?? ""}</p>
           </div>
-          <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm border border-blue-200">
-            {obtenerIniciales(usuario?.nombre)}
-          </div>
+
+          <input
+            ref={inputArchivoRef}
+            type="file"
+            accept="image/*"
+            onChange={handleSeleccionarFoto}
+            className="hidden"
+          />
+
+          <button
+            type="button"
+            disabled={subiendoFoto}
+            onClick={() => inputArchivoRef.current?.click()}
+            title="Cambiar foto de perfil"
+            className="group relative w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-sm border border-blue-200 overflow-hidden cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {fotoActual ? (
+              <img
+                src={fotoActual}
+                alt={usuario?.nombre ?? "Foto de perfil"}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              obtenerIniciales(usuario?.nombre)
+            )}
+
+            <span className="absolute inset-0 bg-slate-900/45 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              {subiendoFoto ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Camera className="w-4 h-4" />
+              )}
+            </span>
+          </button>
         </div>
       </div>
     </header>
