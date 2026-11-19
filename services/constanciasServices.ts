@@ -1,7 +1,7 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import QRCode from "qrcode";
 
-const BASE_URL = "https://tuapp.web.app";
+const BASE_URL = "https://proyecto-dps-zg5u.vercel.app";
 
 export interface DatosConstancia {
   codigo: string;
