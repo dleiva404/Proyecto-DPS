@@ -406,7 +406,23 @@ Se cuenta con un usuario por rol (Empleado, Jefe inmediato, Analista de Nómina,
 - **Repositorio:** https://github.com/dleiva404/Proyecto-DPS
 - **Video demostración:** (pegar enlace)
 - **Documento:** (pegar enlace, si lo pide el portal)
-- **Mockups en Figma:** ver la sección Mockups
+- **Mockups en Figma:** [Mockups](#mockups)
+
+---
+
+## Mockups
+
+Los mockups de la aplicación móvil de Recursos Humanos fueron elaborados en Figma. El prototipo incluye los flujos **Prueba Empleado** y **Prueba Jefes**.
+
+**Enlace al prototipo en Figma:** https://www.figma.com/design/VZbDQpNvRHonBUzquUn1EM/App-M%C3%B3vil-RRHH?node-id=0-1
+
+| Inicio de sesión | Inicio – Empleado | Inicio – Jefe | Solicitud de permiso |
+|---|---|---|---|
+| <img src="docs/mockups/01-login.png" width="180"> | <img src="docs/mockups/02-inicio-empleado.png" width="180"> | <img src="docs/mockups/03-inicio-jefe.png" width="180"> | <img src="docs/mockups/04-solicitud-permiso.png" width="180"> |
+
+| Solicitud de vacaciones | Mis solicitudes | Constancias laborales | Revisión de solicitud |
+|---|---|---|---|
+| <img src="docs/mockups/05-solicitud-vacaciones.png" width="180"> | <img src="docs/mockups/06-mis-solicitudes.png" width="180"> | <img src="docs/mockups/07-constancias.png" width="180"> | <img src="docs/mockups/08-revision-solicitud.png" width="180"> |
 
 ---
 
