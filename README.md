@@ -1,6 +1,6 @@
 # Sistema de Gestión de Recursos Humanos
 
-Sistema web desarrollado para la **gestión de procesos de Recursos Humanos**, orientado a centralizar solicitudes, vacaciones, permisos, constancias laborales, aprobaciones y consultas relacionadas con los empleados de las empresas contempladas en el proyecto.
+Sistema multiplataforma (web y móvil) desarrollado para la **gestión de procesos de Recursos Humanos**, orientado a centralizar solicitudes, vacaciones, permisos, constancias laborales, aprobaciones y consultas relacionadas con los empleados de las empresas contempladas en el proyecto.
 
 El sistema contempla las siguientes **seis empresas**:
 
@@ -51,6 +51,7 @@ La aplicación permite gestionar solicitudes, consultar información de empleado
 - **Tailwind CSS**
 - **Firebase Authentication**
 - **Cloud Firestore**
+- **Firebase Storage**
 - **Next.js Route Handlers**
 - **API REST**
 - **Fetch API**
@@ -120,7 +121,7 @@ La aplicación separa:
 - **Interfaz de usuario:** páginas y componentes desarrollados con React y Next.js.
 - **Lógica de aplicación:** contextos, validaciones y servicios.
 - **Acceso a datos:** servicios de Firebase, Firestore y API REST.
-- **Datos de prueba:** mocks utilizados durante el desarrollo.
+- **Datos en la nube:** Cloud Firestore y Firebase Storage, compartidos con la app móvil.
 
 ---
 
@@ -147,11 +148,28 @@ NEXT_PUBLIC_FIREBASE_APP_ID
 
 Por seguridad, los valores reales de estas variables **no se almacenan en este README**.
 
+La web y la app móvil comparten el mismo proyecto de Firebase:
+
+- **Authentication:** inicio de sesión con correo y contraseña (web y app) y con Google (app).
+- **Cloud Firestore:** las colecciones `usuarios`, `permisos`, `vacaciones` y `constancias` son las mismas para la web y la app, así que lo que se registra en una se ve en la otra en tiempo real.
+- **Storage:** fotos de perfil en `fotos_perfil/{uid}.jpg`, que se pueden subir desde la web o desde la app.
+- **Reglas de seguridad:** están en `firestore.rules` y no están en modo de prueba.
+
 ---
 
 # API REST
 
-Como parte de la integración de servicios requerida en la Fase 2, el proyecto incorpora una **API REST para solicitudes**, implementada mediante los Route Handlers de Next.js.
+El proyecto incorpora una **API REST para solicitudes**, implementada con los Route Handlers de Next.js. En la Entrega Final la API trabaja con los **datos reales de Cloud Firestore** (colecciones `permisos` y `vacaciones`, las mismas de la app móvil).
+
+## Seguridad
+
+La API no guarda credenciales propias. Cada petición debe enviar el **token de sesión de Firebase** del usuario en el encabezado:
+
+```text
+Authorization: Bearer <token>
+```
+
+Con ese token, Firestore aplica las mismas reglas de seguridad que en la web y la app: cada rol solo puede ver o crear lo que le corresponde.
 
 ## Endpoint
 
@@ -161,82 +179,63 @@ Como parte de la integración de servicios requerida en la Fase 2, el proyecto i
 
 ### GET /api/solicitudes
 
-Permite obtener las solicitudes disponibles en los datos de prueba utilizados por el proyecto.
-
-Ejemplo de respuesta:
+Devuelve los permisos y vacaciones registrados en Firestore. Solo pueden consultarlo los roles administrativos (Jefe inmediato, Analista de Nómina, Gerente y RRHH).
 
 ```json
 {
   "success": true,
-  "total": 4,
-  "data": []
+  "total": 5,
+  "data": [
+    {
+      "id": "HamA4teUKRGKHUwUGMcF",
+      "empleado": "Nelson Solano",
+      "tipo": "Permiso Personal",
+      "fechaHorario": "2026-10-23",
+      "empresa": "Didelco",
+      "estado": "Aprobada",
+      "etapaActual": null
+    }
+  ]
 }
 ```
-
-La respuesta contiene:
-
-- `success`: indica si la petición fue procesada correctamente.
-- `total`: cantidad de solicitudes encontradas.
-- `data`: listado de solicitudes.
 
 ### POST /api/solicitudes
 
-Permite recibir y validar una nueva solicitud mediante una petición HTTP.
-
-La API valida los siguientes campos principales:
-
-```text
-empleadoId
-tipo
-fechaHorario
-empresa
-```
-
-Si la información es correcta, la API genera un identificador único para la solicitud y devuelve una respuesta satisfactoria.
-
-Ejemplo:
+Crea un **permiso personal** en Firestore a nombre del usuario del token. Campos que recibe:
 
 ```json
 {
-  "success": true,
-  "message": "Solicitud recibida correctamente.",
-  "data": {
-    "id": "identificador-generado"
-  }
+  "fecha": "2026-11-21",
+  "motivo": "Cita médica",
+  "empresa": "Didelco"
 }
 ```
 
-Durante esta fase, el endpoint POST utiliza los datos mock existentes para demostrar el flujo REST y la validación de información. La solicitud recibida **no se almacena permanentemente** en el arreglo mock.
+`fecha` y `motivo` son obligatorios; `empresa` es opcional. No se permiten domingos ni fechas pasadas. El permiso inicia en la etapa del Jefe inmediato, o en la de la Analista de Nómina si el empleado no tiene jefe asignado.
 
 ---
 
 ## Manejo de respuestas HTTP
 
-La API utiliza diferentes códigos HTTP según el resultado de la petición:
-
 | Código | Descripción |
 |---|---|
 | `200` | Consulta realizada correctamente |
-| `201` | Solicitud recibida correctamente |
-| `400` | Información de la solicitud incompleta o incorrecta |
+| `201` | Permiso creado en Firestore |
+| `400` | Datos incompletos, domingo o fecha pasada |
+| `401` | Sin sesión, o token inválido o vencido |
+| `403` | El rol del usuario no tiene permiso para esa operación |
 | `500` | Error interno durante el procesamiento |
-
-La implementación también contempla manejo de excepciones para evitar respuestas sin estructura cuando ocurre un error.
-
----
 
 ## Pruebas realizadas a la API
 
-Durante el desarrollo se realizaron pruebas de los principales escenarios del endpoint:
+- `GET` sin sesión → `401`.
+- `GET` con un token falso → `401`.
+- `GET` con un Empleado → `403`.
+- `GET` con el Gerente → `200` con los datos reales.
+- `POST` con datos incompletos o en domingo → `400`.
+- `POST` correcto → `201`; el permiso se guarda en Firestore y aparece en la web y en la app.
 
-- Consulta `GET` satisfactoria.
-- Envío `POST` satisfactorio.
-- Generación de identificador único para nuevas solicitudes.
-- Validación de campos obligatorios.
-- Respuesta `400` ante información incompleta.
-- Manejo de errores internos mediante respuesta `500`.
-
-Estas pruebas permiten verificar el funcionamiento básico del servicio REST antes de su integración definitiva con los demás módulos del sistema.
+La página **Integración API** (`/integracion-api`) consume el endpoint con Fetch API enviando el token del usuario que inició sesión.
 
 ---
 
@@ -262,7 +261,7 @@ npm install
 
 ### 4. Configurar las variables de entorno
 
-Crear el archivo `.env.local` en la raíz del proyecto y configurar las variables necesarias de Firebase.
+Crear el archivo `.env.local` en la raíz del proyecto con las variables `NEXT_PUBLIC_FIREBASE_*` de la sección **Firebase**. Los valores se comparten de forma privada.
 
 ### 5. Ejecutar el servidor de desarrollo
 
@@ -290,7 +289,7 @@ La carpeta `mobile/` contiene la versión móvil del sistema, desarrollada con *
 
 ## Módulos de la app móvil
 
-- **Inicio de sesión** con Firebase Authentication (correo y contraseña), validación de campos y sesión persistente.
+- **Inicio de sesión** con Firebase Authentication (correo y contraseña o cuenta de Google), validación de campos y sesión persistente.
 - **Inicio:** resumen del usuario, saldo de vacaciones y notificaciones.
 - **Permisos:** solicitud, seguimiento de estado e historial. Flujo: Jefe inmediato → Analista de Nómina (el Gerente sustituye a la Analista).
 - **Vacaciones:** solicitud con cálculo de días hábiles (sin domingos ni feriados de El Salvador), saldo de 15 días por año y aprobación por etapas: Analista de Nómina → Gerente → Jefe inmediato.
@@ -324,7 +323,7 @@ mobile/
     └── theme/        # colores y estilos
 ```
 
-## Colecciones de Firestore usadas por la app
+## Colecciones de Firestore usadas por la web y la app
 
 | Colección | Contenido |
 |---|---|
@@ -337,6 +336,15 @@ Las reglas de seguridad están en `firestore.rules`: cada empleado solo lee sus 
 
 ## Ejecución de la app móvil
 
+La app usa **inicio de sesión con Google**, por eso **no funciona con Expo Go**: se ejecuta como *development build* en un emulador de Android.
+
+### Requisitos
+
+- Node.js LTS (20 o superior) y Git.
+- **Java JDK 17** (Temurin), con la variable `JAVA_HOME`.
+- **Android Studio** con un emulador creado y la variable `ANDROID_HOME`.
+- Clonar el proyecto en una ruta **sin tildes, ñ, espacios ni OneDrive** (por ejemplo `C:\dev\proyecto-dps`).
+
 ### 1. Instalar dependencias
 
 ```bash
@@ -346,7 +354,7 @@ npm install
 
 ### 2. Configurar Firebase
 
-Crear el archivo `mobile/.env.local` con las siguientes variables (los valores se comparten de forma privada, no están en el repositorio):
+Crear el archivo `mobile/.env.local` con estas variables (los valores se comparten de forma privada, no están en el repositorio):
 
 ```text
 EXPO_PUBLIC_FIREBASE_API_KEY
@@ -355,15 +363,28 @@ EXPO_PUBLIC_FIREBASE_PROJECT_ID
 EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
 EXPO_PUBLIC_FIREBASE_APP_ID
+EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
 ```
 
-### 3. Iniciar la app
+### 3. Compilar e instalar (solo la primera vez)
+
+Con el emulador encendido:
 
 ```bash
-npx expo start -c
+npx expo run:android
 ```
 
-Escanear el código QR con **Expo Go** o presionar `a` para abrirla en el emulador de Android.
+La primera compilación tarda de 10 a 20 minutos y abre la app sola.
+
+### 4. Iniciar la app (las siguientes veces)
+
+```bash
+npx expo start --dev-client -c
+```
+
+Presionar `a` para abrirla en el emulador.
+
+> En Windows, si PowerShell bloquea los scripts, usar `npm.cmd` y `npx.cmd`, o ejecutar los comandos desde el Símbolo del sistema (cmd).
 
 ### Usuarios de prueba
 
@@ -378,6 +399,14 @@ Se cuenta con un usuario por rol (Empleado, Jefe inmediato, Analista de Nómina,
 
 - **Video demostración:** https://udbedu-my.sharepoint.com/:v:/g/personal/lm160828_alumno_udb_edu_sv/IQBp7BPRQN38SoDZoXkgB1sUAb9Q41WNoOcqzxdxEs8UZ9M?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=ao5htV
 - **Documento PDF:** https://udbedu-my.sharepoint.com/:b:/g/personal/lm160828_alumno_udb_edu_sv/IQAtjL9AR2bmTavY2PpwErR-AW3pwvgS7P2fVjJJPQ5Q-So?e=P9pNvs
+
+## Entregables – Entrega Final
+
+- **Aplicación web:** https://proyecto-dps-zg5u.vercel.app
+- **Repositorio:** https://github.com/dleiva404/Proyecto-DPS
+- **Video demostración:** (pegar enlace)
+- **Documento:** (pegar enlace, si lo pide el portal)
+- **Mockups en Figma:** ver la sección Mockups
 
 ---
 
@@ -419,6 +448,12 @@ Durante el desarrollo se realizaron pruebas y capturas de los principales proces
 
 ---
 
+## Licencia
+
+Este proyecto está bajo la licencia **Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional (CC BY-NC-SA 4.0)**. Ver el archivo [LICENSE](LICENSE).
+
+---
+
 ## Integrantes
 
 | Integrante | Carné |
@@ -435,12 +470,14 @@ Durante el desarrollo se realizaron pruebas y capturas de los principales proces
 
 **DPS941 – Diseño y Programación de Software Multiplataforma**
 
-**Etapa 3 – Aplicación móvil (React Native) y Firebase**
+**Entrega Final – Aplicación multiplataforma (web con Next.js y móvil con React Native) con Firebase**
 
 ---
 
 ## Estado del proyecto
 
-Proyecto desarrollado como parte de la **Fase 2**, incluyendo la estructura base de la aplicación web, autenticación, roles, módulos principales, integración con servicios, API REST, manejo de datos, documentación y preparación para despliegue.
+**Entrega Final (22 de noviembre de 2026).** El sistema está completo en sus dos versiones:
 
-En la Etapa 3 se incorporó la aplicación móvil en React Native con Firebase Authentication y Cloud Firestore.
+- **Web (Next.js, desplegada en Vercel):** solicitudes de permisos y vacaciones con flujo de aprobación por roles, constancias con PDF y código QR, reportes con gráficas y exportación a CSV, dashboard con indicadores reales, panel de AdminTI, foto de perfil y API REST protegida con el token de sesión.
+- **Móvil (React Native con Expo):** los mismos módulos, inicio de sesión con correo o Google, notificaciones e historial de solicitudes.
+- **Firebase:** web y móvil comparten Authentication, Cloud Firestore y Storage, por lo que la información se sincroniza en tiempo real entre ambas.
