@@ -71,6 +71,6 @@ Pruebas funcionales realizadas en la versión web (Vercel) y en la app móvil (e
 
 ## Resumen
 
-- **Pruebas realizadas:** 30
-- **Pruebas que pasaron:** 30
+- **Pruebas realizadas:** 34
+- **Pruebas que pasaron:** 34
 - **Errores encontrados:** Ninguno crítico; el comportamiento observado fue el esperado en las pruebas realizadas.

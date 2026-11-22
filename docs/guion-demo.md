@@ -28,7 +28,7 @@ Se comprobó que los diferentes roles respetan sus permisos y que los flujos de 
 - **Constancias:** solicitud del Empleado y autorización por RRHH.
 - **API:** acceso permitido para el Gerente y restringido para el Empleado mediante error 403.
 
-En total se registraron **30 pruebas realizadas**, con **30 pruebas satisfactorias** y sin errores críticos encontrados durante las pruebas.
+En total se registraron **34 pruebas realizadas**, con **34 pruebas satisfactorias** y sin errores críticos encontrados durante las pruebas.
 
 También se verificó el manejo de errores, como contraseñas incorrectas, fechas inválidas, solicitudes que superan el saldo disponible y accesos no autorizados.
 
@@ -37,5 +37,3 @@ También se verificó el manejo de errores, como contraseñas incorrectas, fecha
 - Entrar siempre con correo y `Admin123` en las cuentas de prueba; Google solo con la cuenta de David.
 - Tener una solicitud ya creada por si falla el internet.
 - Si algo falla, explicar qué debería pasar y seguir con el siguiente punto.
-
-Si el equipo decide otro orden u otros tiempos, cámbialo antes del commit. Lo importante es que cada quien presente lo que programó, porque en la defensa el docente puede preguntar sobre el código de cada integrante.
