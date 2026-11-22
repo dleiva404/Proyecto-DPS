@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import Image from "next/image";
 
 export default function LoginPage() {
-  const { login, usuario, authError, clearAuthError } = useAuth();
+  const { login, loginGoogle, usuario, authError, clearAuthError } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +38,25 @@ export default function LoginPage() {
     }
   }
 
+  async function handleGoogle() {
+    setError(null);
+    clearAuthError();
+    setEnviando(true);
+    try {
+      await loginGoogle();
+    } catch (e) {
+      const codigo = (e as { code?: string }).code;
+      if (
+        codigo !== "auth/popup-closed-by-user" &&
+        codigo !== "auth/cancelled-popup-request"
+      ) {
+        setError("No se pudo iniciar sesión con Google.");
+      }
+    } finally {
+      setEnviando(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100 p-6">
       <form
@@ -45,9 +64,17 @@ export default function LoginPage() {
         className="w-full max-w-md bg-white rounded-3xl shadow-md border border-slate-200/80 p-10"
       >
         <div className="flex items-center gap-4 mb-8 pb-6 border-b border-slate-100">
-          <Image src="/LogoGC.png" alt="Logo Grupo Calma" width={68} height={68} className="object-contain" />
+          <Image
+            src="/LogoGC.png"
+            alt="Logo Grupo Calma"
+            width={68}
+            height={68}
+            className="object-contain"
+          />
           <div>
-            <h1 className="text-lg font-bold text-slate-800 leading-tight">Gestión Recursos Humanos</h1>
+            <h1 className="text-lg font-bold text-slate-800 leading-tight">
+              Gestión Recursos Humanos
+            </h1>
             <p className="text-xs text-slate-400 mt-0.5">Grupo Calma</p>
           </div>
         </div>
@@ -56,7 +83,9 @@ export default function LoginPage() {
           Ingrese sus credenciales para continuar
         </p>
 
-        <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">Correo</label>
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">
+          Correo
+        </label>
         <input
           type="email"
           required
@@ -66,7 +95,9 @@ export default function LoginPage() {
           className="w-full mb-5 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-700"
         />
 
-        <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">Contraseña / PIN</label>
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wider">
+          Contraseña / PIN
+        </label>
         <input
           type="password"
           required
@@ -76,7 +107,11 @@ export default function LoginPage() {
           className="w-full mb-6 px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 text-slate-700"
         />
 
-        {mensajeError && <p className="text-xs text-rose-600 mb-4 font-medium">{mensajeError}</p>}
+        {mensajeError && (
+          <p className="text-xs text-rose-600 mb-4 font-medium">
+            {mensajeError}
+          </p>
+        )}
 
         <button
           type="submit"
@@ -84,6 +119,22 @@ export default function LoginPage() {
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl text-sm transition shadow-sm"
         >
           {enviando ? "Ingresando..." : "Iniciar Sesión"}
+        </button>
+
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px bg-slate-200" />
+          <span className="text-xs text-slate-400">o</span>
+          <div className="flex-1 h-px bg-slate-200" />
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogle}
+          disabled={enviando}
+          className="w-full flex items-center justify-center gap-2 border border-slate-300 hover:bg-slate-50 disabled:opacity-60 text-slate-700 font-semibold py-3.5 rounded-xl text-sm transition"
+        >
+          <span className="text-blue-600 font-bold text-base">G</span>
+          Continuar con Google
         </button>
       </form>
     </div>

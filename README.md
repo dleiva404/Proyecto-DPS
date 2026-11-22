@@ -150,7 +150,7 @@ Por seguridad, los valores reales de estas variables **no se almacenan en este R
 
 La web y la app móvil comparten el mismo proyecto de Firebase:
 
-- **Authentication:** inicio de sesión con correo y contraseña (web y app) y con Google (app).
+- **Authentication:** inicio de sesión con correo y contraseña y con Google, tanto en la web como en la app.
 - **Cloud Firestore:** las colecciones `usuarios`, `permisos`, `vacaciones` y `constancias` son las mismas para la web y la app, así que lo que se registra en una se ve en la otra en tiempo real.
 - **Storage:** fotos de perfil en `fotos_perfil/{uid}.jpg`, que se pueden subir desde la web o desde la app.
 - **Reglas de seguridad:** están en `firestore.rules` y no están en modo de prueba.
@@ -404,8 +404,6 @@ Se cuenta con un usuario por rol (Empleado, Jefe inmediato, Analista de Nómina,
 
 - **Aplicación web:** https://proyecto-dps-zg5u.vercel.app
 - **Repositorio:** https://github.com/dleiva404/Proyecto-DPS
-- **Video demostración:** (pegar enlace)
-- **Documento:** (pegar enlace, si lo pide el portal)
 - **Mockups en Figma:** [Mockups](#mockups)
 
 ---
@@ -494,6 +492,6 @@ Este proyecto está bajo la licencia **Creative Commons Atribución-NoComercial-
 
 **Entrega Final (22 de noviembre de 2026).** El sistema está completo en sus dos versiones:
 
-- **Web (Next.js, desplegada en Vercel):** solicitudes de permisos y vacaciones con flujo de aprobación por roles, constancias con PDF y código QR, reportes con gráficas y exportación a CSV, dashboard con indicadores reales, panel de AdminTI, foto de perfil y API REST protegida con el token de sesión.
+- **Web (Next.js, desplegada en Vercel):** solicitudes de permisos y vacaciones con flujo de aprobación por roles, constancias con PDF y código QR, reportes con gráficas y exportación a CSV, dashboard con indicadores reales, panel de AdminTI, inicio de sesión con correo o Google, foto de perfil y API REST protegida con el token de sesión.
 - **Móvil (React Native con Expo):** los mismos módulos, inicio de sesión con correo o Google, notificaciones e historial de solicitudes.
 - **Firebase:** web y móvil comparten Authentication, Cloud Firestore y Storage, por lo que la información se sincroniza en tiempo real entre ambas.
