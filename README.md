@@ -393,12 +393,12 @@ Se cuenta con un usuario por rol (Empleado, Jefe inmediato, Analista de Nómina,
 ## Entregables Etapa 3 – Foro 1
 
 - **Video demostración:** https://drive.google.com/drive/folders/1DbgbkyPI9ZTNIT2oh0_X41rJKuArx49Z 
-- **Documento PDF (React Native y Figma, APA 7):** https://drive.google.com/file/d/1UCqTUzMywc-y3VXIusq6Jic6vm_lez1V/view?usp=sharing
+- **Documento PDF (React Native y Figma, APA 7):** [DPS - Proyecto Fase III.pdf](DPS%20-%20Proyecto%20Fase%20III.pdf)
 
 ## Entregables Etapa 3 – Foro 2
 
 - **Video demostración:** https://udbedu-my.sharepoint.com/:v:/g/personal/lm160828_alumno_udb_edu_sv/IQBp7BPRQN38SoDZoXkgB1sUAb9Q41WNoOcqzxdxEs8UZ9M?nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJPbmVEcml2ZUZvckJ1c2luZXNzIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXciLCJyZWZlcnJhbFZpZXciOiJNeUZpbGVzTGlua0NvcHkifX0&e=ao5htV
-- **Documento PDF:** https://udbedu-my.sharepoint.com/:b:/g/personal/lm160828_alumno_udb_edu_sv/IQAtjL9AR2bmTavY2PpwErR-AW3pwvgS7P2fVjJJPQ5Q-So?e=P9pNvs
+- **Documento PDF:** [DPS - Foro 2.pdf](DPS%20-%20Foro%202.pdf)
 
 ## Entregables – Entrega Final
 
@@ -421,6 +421,25 @@ Los mockups de la aplicación móvil de Recursos Humanos fueron elaborados en Fi
 | Solicitud de vacaciones | Mis solicitudes | Constancias laborales | Revisión de solicitud |
 |---|---|---|---|
 | <img src="docs/mockups/05-solicitud-vacaciones.png" width="180"> | <img src="docs/mockups/06-mis-solicitudes.png" width="180"> | <img src="docs/mockups/07-constancias.png" width="180"> | <img src="docs/mockups/08-revision-solicitud.png" width="180"> |
+
+---
+
+## Documentación del proyecto
+
+Todo el material del proyecto se encuentra dentro de este repositorio:
+
+| Documento | Descripción |
+|---|---|
+| [DPS - Proyecto Fase I.pdf](DPS%20-%20Proyecto%20Fase%20I.pdf) | Etapa 1: análisis y planificación |
+| [DPS - Proyecto Fase II.pdf](DPS%20-%20Proyecto%20Fase%20II.pdf) | Etapa 2: aplicación web con React y Next.js |
+| [DPS - Proyecto Fase III.pdf](DPS%20-%20Proyecto%20Fase%20III.pdf) | Etapa 3, Foro 1: React Native y Figma |
+| [DPS - Foro 2.pdf](DPS%20-%20Foro%202.pdf) | Etapa 3, Foro 2: Firebase en React Native |
+| [docs/mockups](docs/mockups) | Mockups de Figma exportados |
+| [docs/pruebas.md](docs/pruebas.md) | Pruebas funcionales con cada rol, en web y app |
+| [docs/guion-demo.md](docs/guion-demo.md) | Guion de la demostración para la defensa |
+| [docs/firebase-setup.md](docs/firebase-setup.md) | Configuración de Firebase Authentication y roles |
+| [firestore.rules](firestore.rules) | Reglas de seguridad de Cloud Firestore |
+| [LICENSE](LICENSE) | Licencia Creative Commons BY-NC-SA 4.0 |
 
 ---
 
