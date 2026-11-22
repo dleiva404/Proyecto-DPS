@@ -4,6 +4,8 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   User as FirebaseUser,
 } from "firebase/auth";
@@ -11,8 +13,10 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { UsuarioSistema } from "@/types/usuario";
 
-const MSG_CUENTA_DESACTIVADA = "Cuenta desactivada. Contacta a un Administrador de TI.";
-const MSG_SIN_PERFIL = "No se encontró tu perfil. Contacta a un Administrador de TI.";
+const MSG_CUENTA_DESACTIVADA =
+  "Cuenta desactivada. Contacta a un Administrador de TI.";
+const MSG_SIN_PERFIL =
+  "No se encontró tu perfil. Contacta a un Administrador de TI.";
 const MSG_ERROR_PERFIL =
   "No se pudo cargar tu perfil. Intenta de nuevo o contacta a un Administrador de TI.";
 
@@ -25,6 +29,7 @@ interface AuthContextValue {
   cargando: boolean;
   authError: string | null;
   login: (email: string, password: string) => Promise<void>;
+  loginGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   clearAuthError: () => void;
 }
@@ -64,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!snap.exists()) {
           // El usuario existe en Auth pero no tiene documento de rol asignado en Firestore
           console.error(
-            `No existe documento en usuarios/${fbUser.uid}. Pide al Administrador de TI que lo cree.`
+            `No existe documento en usuarios/${fbUser.uid}. Pide al Administrador de TI que lo cree.`,
           );
           setUsuario(null);
           setAuthError(MSG_SIN_PERFIL);
@@ -105,6 +110,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // onAuthStateChanged se encarga de actualizar el estado tras el login
   }
 
+  async function loginGoogle() {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  }
+
   async function logout() {
     await signOut(auth);
   }
@@ -115,7 +124,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ usuario, firebaseUser, cargando, authError, login, logout, clearAuthError }}
+      value={{
+        usuario,
+        firebaseUser,
+        cargando,
+        authError,
+        login,
+        loginGoogle,
+        logout,
+        clearAuthError,
+      }}
     >
       {children}
     </AuthContext.Provider>
