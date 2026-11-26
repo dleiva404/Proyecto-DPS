@@ -405,6 +405,7 @@ Se cuenta con un usuario por rol (Empleado, Jefe inmediato, Analista de Nómina,
 - **Aplicación web:** https://proyecto-dps-zg5u.vercel.app
 - **Repositorio:** https://github.com/dleiva404/Proyecto-DPS
 - **Mockups en Figma:** [Mockups](#mockups)
+- **Video de la defensa:** https://drive.google.com/file/d/1wQQx9c98wWUnZFMskUpK1eINVNYfBcSk/view
 
 ---
 
