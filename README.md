@@ -388,7 +388,16 @@ Presionar `a` para abrirla en el emulador.
 
 ### Usuarios de prueba
 
-Se cuenta con un usuario por rol (Empleado, Jefe inmediato, Analista de Nómina, Gerente y Asistente de Planilla/RRHH). Las credenciales se comparten en la entrega del Aula Digital.
+Se cuenta con un usuario por rol. Todas las cuentas usan la contraseña `Admin123` y se ingresa con **correo y contraseña** (no con Google).
+
+| Rol | Nombre | Correo | Plataforma |
+|---|---|---|---|
+| Empleado | Nelson Solano | nelson14maury@gmail.com | Web y app |
+| Jefe inmediato | Alcyr Figueroa | falcyralexander@gmail.com | Web y app |
+| Analista de Nómina | Victor Pocasangre | victorgpocas@gmail.com | Web y app |
+| Gerente | Carlos Calderón | chcalderon@didelco.com | Web y app |
+| Asistente de Planilla (RRHH) | Moisés García | gc20078@ues.edu.sv | Web y app |
+| Administrador de TI | Arnold Pérez | admin.ti@didelco.com | Solo web |
 
 ## Entregables Etapa 3 – Foro 1
 
